@@ -1,0 +1,12 @@
+#ifndef LOCKIN2_GLOBAL_HPP
+#define LOCKIN2_GLOBAL_HPP
+
+#include <QtCore/qglobal.h>
+
+#if defined(LOCKIN2_LIBRARY)
+#  define LOCKIN2SHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define LOCKIN2SHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // LOCKIN2_GLOBAL_HPP
