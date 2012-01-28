@@ -1,4 +1,4 @@
-#include "qaudioutils.hpp"
+#include "audioutils.hpp"
 #include <QDebug>
 
 void showQAudioFormat(const QAudioFormat &format)
@@ -69,7 +69,6 @@ QStringList sampleTypesToString(QList<QAudioFormat::SampleType> list)
     }
     return ret;
 }
-
 
 void showQAudioDeviceInfo(const QAudioDeviceInfo &device)
 {

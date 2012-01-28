@@ -1,7 +1,8 @@
 #include "lockin2gui.hpp"
 #include "ui_lockingui.h"
+#include "audioutils.hpp"
 #include <QDebug>
-#include "qaudioutils.hpp"
+#include <QTime>
 
 Lockin2Gui::Lockin2Gui(QWidget *parent) :
     QWidget(parent),
@@ -12,17 +13,16 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
     foreach (const QAudioDeviceInfo &deviceInfo, QAudioDeviceInfo::availableDevices(QAudio::AudioInput)) {
         QAudioFormat format = foundFormat(deviceInfo);
 
-        qDebug() << "===============================================================";
-
-        showQAudioDeviceInfo(deviceInfo);
-        qDebug() << "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -";
-        showQAudioFormat(format);
-
-        if (deviceInfo.isFormatSupported(format) && lockin.isFormatSupported(format))
+        if (deviceInfo.isFormatSupported(format) && lockin.isFormatSupported(format)) {
             ui->audioDeviceSelector->addItem(deviceInfo.deviceName(), qVariantFromValue(deviceInfo));
-         else
-            qDebug() << deviceInfo.deviceName() << " not supported";
+            qDebug() << deviceInfo.deviceName() << " added in the list";
+        } else {
+            qDebug() << deviceInfo.deviceName() << " is not supported";
+        }
     }
+
+    ui->outputFrequency->setValue(1.0 / lockin.outputPeriod());
+    ui->integrationTime->setValue(lockin.integrationTime());
 
     connect(&lockin, SIGNAL(newValues(qreal,qreal,qreal)), this, SLOT(getValues(qreal,qreal,qreal)));
 }
@@ -34,29 +34,23 @@ Lockin2Gui::~Lockin2Gui()
 
 void Lockin2Gui::on_buttonStartStop_clicked()
 {
-    QAudioDeviceInfo deviceInfo = ui->audioDeviceSelector->itemData(ui->audioDeviceSelector->currentIndex()).value<QAudioDeviceInfo>();
-
-    qDebug() << "========== device ========== ";
-    showQAudioDeviceInfo(deviceInfo);
-
-    QAudioFormat format = foundFormat(deviceInfo);
-
-    qDebug() << "========== format ========== ";
-    showQAudioFormat(format);
-
-    if (lockin.start(deviceInfo, format)) {
-        ui->audioDeviceSelector->setEnabled(false);
-        qDebug() << "========== ok ========== ";
+    if (lockin.isRunning()) {
+        stopLockin();
     } else {
-        qDebug() << "========== flop ========== ";
+        startLockin();
     }
 }
 
 void Lockin2Gui::getValues(qreal time, qreal x, qreal y)
 {
-//    qDebug() << time;
     ui->lcdForXValue->display(x);
-    ui->lcdForYValue->display(y);
+
+    QString info("y/x = %1%\n"
+                 "execution time = %2");
+
+    info = info.arg(y / x * 100.0);
+    info = info.arg(QTime().addMSecs(1000*time).toString("h:m:s,zzz"));
+    ui->info->setText(info);
 }
 
 QAudioFormat Lockin2Gui::foundFormat(const QAudioDeviceInfo &device)
@@ -77,4 +71,39 @@ QAudioFormat Lockin2Gui::foundFormat(const QAudioDeviceInfo &device)
     format.setSampleType(QAudioFormat::UnSignedInt);
 
     return format;
+}
+
+void Lockin2Gui::on_buttonAutoPhase_clicked()
+{
+    lockin.setPhase(lockin.autoPhase());
+}
+
+void Lockin2Gui::startLockin()
+{
+    QAudioDeviceInfo deviceInfo = ui->audioDeviceSelector->itemData(ui->audioDeviceSelector->currentIndex()).value<QAudioDeviceInfo>();
+
+    qDebug() << "========== device infos ========== ";
+    showQAudioDeviceInfo(deviceInfo);
+
+    QAudioFormat format = foundFormat(deviceInfo);
+
+    qDebug() << "========== format infos ========== ";
+    showQAudioFormat(format);
+
+    lockin.setOutputPeriod(1.0 / ui->outputFrequency->value());
+    lockin.setIntegrationTime(ui->integrationTime->value());
+
+    if (lockin.start(deviceInfo, format)) {
+        ui->frame->setEnabled(false);
+        ui->buttonStartStop->setText("Stop !");
+    } else {
+        qDebug() << __FUNCTION__ << ": cannot start lockin";
+    }
+}
+
+void Lockin2Gui::stopLockin()
+{
+    lockin.stop();
+    ui->frame->setEnabled(true);
+    ui->buttonStartStop->setText("Start");
 }

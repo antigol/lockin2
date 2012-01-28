@@ -17,16 +17,20 @@ class LOCKIN2SHARED_EXPORT Lockin2 : public QObject {
 public:
     explicit Lockin2(QObject *parent = 0);
 
+    bool isRunning() const;
     bool isFormatSupported(const QAudioFormat &format);
 
     // peu être appelé quand sa tourne pas:
     bool start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &format);
     void setOutputPeriod(qreal outputPeriod);
+    qreal outputPeriod() const;
     void setIntegrationTime(qreal integrationTime);
+    qreal integrationTime() const;
     void setVumeterTime(qreal vumeterTime); // le signal qui est sauvé pour être affiché à l'utilisateur
 
     // peu être appelé quand sa tourne:
     void setPhase(qreal phase);
+    qreal phase() const;
     qreal autoPhase() const;
     QList<QPair<qreal, qreal> > vumeterData();
 

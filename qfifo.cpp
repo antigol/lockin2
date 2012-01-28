@@ -7,7 +7,12 @@ QFifo::QFifo(QObject *parent) :
 
 bool QFifo::atEnd() const
 {
-    return _data.isEmpty();
+    return (_data.isEmpty() && QIODevice::atEnd());
+}
+
+qint64 QFifo::bytesAvailable() const
+{
+    return _data.size() + QIODevice::bytesAvailable();
 }
 
 qint64 QFifo::readData(char *data, qint64 len)

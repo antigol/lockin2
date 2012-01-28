@@ -19,8 +19,12 @@ public:
 private slots:
     void on_buttonStartStop_clicked();
     void getValues(qreal time, qreal x, qreal y);
+    void on_buttonAutoPhase_clicked();
+
 
 private:
+    void startLockin();
+    void stopLockin();
     QAudioFormat foundFormat(const QAudioDeviceInfo &device);
 
     template <typename T>

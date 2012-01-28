@@ -11,6 +11,7 @@ public:
     explicit QFifo(QObject *parent = 0);
     
     bool atEnd() const;
+    qint64 bytesAvailable() const;
 
 private:
     qint64 readData(char *data, qint64 len);

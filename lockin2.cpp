@@ -12,14 +12,19 @@ Lockin2::Lockin2(QObject *parent) :
 //    _bufferRead = new QBuffer(&_byteArray, this);
 //    _bufferRead->open(QIODevice::ReadOnly | QIODevice::Unbuffered);
     _fifo = new QFifo(this);
-    _fifo->open(QIODevice::ReadWrite | QIODevice::Unbuffered);
+    _fifo->open(QIODevice::ReadWrite /*| QIODevice::Unbuffered*/);
 
     _audioInput = 0;
 
     setOutputPeriod(0.5);
-    setVumeterTime(0.02); // dix periodes de 500Hz
+    setVumeterTime(0.0);
     setIntegrationTime(3.0);
     setPhase(0.0);
+}
+
+bool Lockin2::isRunning() const
+{
+    return (_audioInput != 0);
 }
 
 bool Lockin2::isFormatSupported(const QAudioFormat &format)
@@ -93,12 +98,22 @@ void Lockin2::setOutputPeriod(qreal outputPeriod)
         qDebug() << __FUNCTION__ << ": lockin is running";
 }
 
+qreal Lockin2::outputPeriod() const
+{
+    return _outputPeriod;
+}
+
 void Lockin2::setIntegrationTime(qreal integrationTime)
 {
     if (_audioInput == 0)
         _integrationTime = integrationTime;
     else
         qDebug() << __FUNCTION__ << ": lockin is running";
+}
+
+qreal Lockin2::integrationTime() const
+{
+    return _integrationTime;
 }
 
 void Lockin2::setVumeterTime(qreal vumeterTime)
@@ -111,13 +126,18 @@ void Lockin2::setVumeterTime(qreal vumeterTime)
 
 void Lockin2::setPhase(qreal phase)
 {
-    _phase = phase;
+    _phase = phase * M_PI/180.0;
+}
+
+qreal Lockin2::phase() const
+{
+    return _phase * 180.0/M_PI;
 }
 
 qreal Lockin2::autoPhase() const
 {
     if (_audioInput != 0) {
-        return _phase + std::atan2(_yValue, _xValue);
+        return (_phase + std::atan2(_yValue, _xValue)) * 180.0/M_PI;
     } else {
         qDebug() << __FUNCTION__ << ": lockin is not running";
         return 0.0;
