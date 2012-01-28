@@ -2,13 +2,19 @@
 #define LOCKINGUI_HPP
 
 #include <QWidget>
-#include "lockin2.hpp"
+#include "lockin2_global.hpp"
+
+#if defined(LOCKIN2_LIBRARY)
+#  include "lockin2.hpp"
+#else
+#  include <lockin2/lockin2.hpp>
+#endif
 
 namespace Ui {
 class LockinGui;
 }
 
-class Lockin2Gui : public QWidget
+class LOCKIN2SHARED_EXPORT Lockin2Gui : public QWidget
 {
     Q_OBJECT
     
@@ -26,15 +32,6 @@ private:
     void startLockin();
     void stopLockin();
     QAudioFormat foundFormat(const QAudioDeviceInfo &device);
-
-    template <typename T>
-    T maxInList(const QList<T> &list, T def)
-    {
-        T max = def;
-        for (int i = 0; i < list.size(); ++i)
-            max = qMax(max, list[i]);
-        return max;
-    }
 
     Ui::LockinGui *ui;
     Lockin2 lockin;

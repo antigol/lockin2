@@ -11,10 +11,16 @@ TEMPLATE = lib
 
 DEFINES += LOCKIN2_LIBRARY
 
-SOURCES += lockin2.cpp
+SOURCES += lockin2.cpp \
+    qfifo.cpp \
+    lockin2gui.cpp \
+    audioutils.cpp
 
 HEADERS += lockin2.hpp\
-        lockin2_global.hpp
+        lockin2_global.hpp \
+    qfifo.hpp \
+    lockin2gui.hpp \
+    audioutils.hpp
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN
@@ -31,11 +37,14 @@ unix:!symbian {
         target.path = /opt/usr/lib
     } else {
         target.path = /usr/local/lib
-        headers.files = lockin2.hpp
+        headers.files = lockin2.hpp lockin2gui.hpp
         headers.path = /usr/local/include/lockin2
     }
     INSTALLS += target headers
 }
+
+FORMS += \
+    lockingui.ui
 
 
 

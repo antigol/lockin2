@@ -2,7 +2,6 @@
 #define LOCKIN2_HPP
 
 #include "lockin2_global.hpp"
-#include "qfifo.hpp"
 
 #include <QObject>
 #include <QAudioInput>
@@ -11,6 +10,8 @@
 #include <QDataStream>
 #include <QPair>
 #include <QMutex>
+
+class QFifo;
 
 class LOCKIN2SHARED_EXPORT Lockin2 : public QObject {
     Q_OBJECT

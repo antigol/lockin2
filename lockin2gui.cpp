@@ -56,6 +56,15 @@ void Lockin2Gui::getValues(qreal time, qreal x, qreal y)
     std::cout << time << " " << x << std::endl;
 }
 
+template <typename T>
+T maxInList(const QList<T> &list, T def)
+{
+    T max = def;
+    for (int i = 0; i < list.size(); ++i)
+        max = qMax(max, list[i]);
+    return max;
+}
+
 QAudioFormat Lockin2Gui::foundFormat(const QAudioDeviceInfo &device)
 {
     QAudioFormat format = device.preferredFormat();

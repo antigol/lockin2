@@ -1,4 +1,5 @@
 #include "lockin2.hpp"
+#include "qfifo.hpp"
 #include <cmath>
 #include <QDebug>
 #include <QTime>
