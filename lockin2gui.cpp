@@ -74,7 +74,6 @@ QAudioFormat Lockin2Gui::foundFormat(const QAudioDeviceInfo &device)
 
     format.setChannelCount(2);
     format.setCodec("audio/pcm");
-    format.setSampleSize(32);
     format.setSampleType(QAudioFormat::UnSignedInt);
 
     return format;

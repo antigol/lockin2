@@ -38,7 +38,7 @@ private slots:
     void interpretInput();
 
 private:
-    QList<QPair<qreal, qreal> > parseChopperSignal(QList<quint32> signal, quint32 avg, qreal phase);
+    QList<QPair<qreal, qreal> > parseChopperSignal(QList<unsigned int> signal, quint32 avg, qreal phase);
 
 
     // vaut 0 quand s'est arrêté
@@ -53,7 +53,10 @@ private:
     /*
      * A ne pas toucher pandant que sa tourne
      */
+    int _sampleSize;
+
     QBuffer *_buffer;
+    QByteArray _byteArray;
     QDataStream _inputStream;
 
     QList<QPair<qreal, qreal> > _data;

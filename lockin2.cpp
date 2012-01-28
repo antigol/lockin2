@@ -5,7 +5,7 @@
 Lockin2::Lockin2(QObject *parent) :
     QObject(parent)
 {
-    _buffer = new QBuffer(this);
+    _buffer = new QBuffer(&_byteArray, this);
     _buffer->open(QIODevice::ReadWrite);
 
     _inputStream.setDevice(_buffer);
@@ -32,9 +32,9 @@ bool Lockin2::isFormatSupported(const QAudioFormat &format)
         return false;
     }
 
-    if (format.sampleSize() != 32) {
-        return false;
-    }
+//    if (format.sampleSize() != 32) {
+//        return false;
+//    }
 
     return true;
 }
@@ -62,6 +62,8 @@ bool Lockin2::start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &for
         connect(_audioInput, SIGNAL(notify()), this, SLOT(interpretInput()));
 
         _inputStream.setByteOrder((QDataStream::ByteOrder)format.byteOrder());
+
+        _sampleSize = format.sampleSize();
 
         // pour être au millieu avec le temps
         _timeValue = -(_integrationTime / 2.0);
@@ -156,17 +158,33 @@ void Lockin2::interpretInput()
      * 1.0s 500Hz -> 0.4%
      */
     QList<qreal> leftSignal;
-    QList<quint32> chopperSignal;
+    QList<unsigned int> chopperSignal;
 
     int newSamplesCount = 0;
     quint64 avgRight = 0;
 
-    while (_buffer->bytesAvailable() >= qint64(2 * sizeof (quint32))) {
-        quint32 left, right;
+    qDebug() << _byteArray.size();
+    while (_byteArray.size() >= qint64(2 * _sampleSize / 8)) {
+        unsigned int left, right;
 
-        _inputStream >> left;
-        _inputStream >> right;
-
+        switch (_sampleSize) {
+        case 8:
+            _inputStream >> (quint8 &)left;
+            _inputStream >> (quint8 &)right;
+            break;
+        case 16:
+            _inputStream >> (quint16 &)left;
+            _inputStream >> (quint16 &)right;
+            break;
+        case 32:
+            _inputStream >> (quint32 &)left;
+            _inputStream >> (quint32 &)right;
+            break;
+        case 64:
+            _inputStream >> (quint64 &)left;
+            _inputStream >> (quint64 &)right;
+            break;
+        }
 
         leftSignal << left;
         chopperSignal << right;
@@ -248,7 +266,7 @@ void Lockin2::interpretInput()
     emit newValues(_timeValue, x, y);
 }
 
-QList<QPair<qreal, qreal> > Lockin2::parseChopperSignal(QList<quint32> signal, quint32 avg, qreal phase)
+QList<QPair<qreal, qreal> > Lockin2::parseChopperSignal(QList<unsigned int> signal, quint32 avg, qreal phase)
 {
     // transforme le signal en sin et cos déphasé
     // dans les bords, la valeur 2.0 indique d'on ignore l'element
