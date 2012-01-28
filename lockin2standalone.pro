@@ -3,18 +3,12 @@ QT += multimedia
 
 TARGET = lockin2
 
-HEADERS += \
-    lockin2.hpp \
-    lockin2gui.hpp \
-    qfifo.hpp \
-    audioutils.hpp
-
-SOURCES += \
-    lockin2.cpp \
-    main.cpp \
-    lockin2gui.cpp \
-    qfifo.cpp \
-    audioutils.cpp
+SOURCES += main.cpp
 
 FORMS += \
     lockingui.ui
+
+LIBS += -llockin2
+
+## lancer la commande 'sudo ldconfig' pour résoudre le problème d'execution
+

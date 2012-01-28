@@ -47,5 +47,5 @@ FORMS += \
     lockingui.ui
 
 
-
+## lancer la commande 'sudo ldconfig' pour résoudre le problème d'execution
 

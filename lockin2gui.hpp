@@ -1,8 +1,9 @@
 #ifndef LOCKINGUI_HPP
 #define LOCKINGUI_HPP
 
-#include <QWidget>
 #include "lockin2_global.hpp"
+
+#include <QWidget>
 
 #if defined(LOCKIN2_LIBRARY)
 #  include "lockin2.hpp"
