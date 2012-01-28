@@ -194,36 +194,34 @@ void Lockin2::interpretInput()
 
     while (!in.atEnd()) {
         unsigned int left, right;
-        quint8 i8;
-        quint16 i16;
-        quint32 i32;
-        quint64 i64;
 
-        switch (_sampleSize) {
-        case 8:
-            in >> i8;
-            left = i8;
-            in >> i8;
-            right = i8;
-            break;
-        case 16:
-            in >> i16;
-            left = i16;
-            in >> i16;
-            right = i16;
-            break;
-        case 32:
-            in >> i32;
-            left = i32;
-            in >> i32;
-            right = i32;
-            break;
-        case 64:
-            in >> i64;
-            left = i64;
-            in >> i64;
-            right = i64;
-            break;
+        if (_sampleSize == 8) {
+            quint8 i;
+
+            in >> i;
+            left = i;
+
+            in >> i;
+            right = i;
+        } else if (_sampleSize == 16) {
+            quint16 i;
+
+            in >> i;
+            left = i;
+
+            in >> i;
+            right = i;
+        } else if (_sampleSize == 32) {
+            quint32 i;
+
+            in >> i;
+            left = i;
+
+            in >> i;
+            right = i;
+        } else {
+            left = right = 0;
+            qDebug() << __FUNCTION__ << ": sampleSize not valid";
         }
 
         leftSignal << left;
@@ -232,8 +230,6 @@ void Lockin2::interpretInput()
         avgRight += right;
         newSamplesCount++;
     }
-//    qDebug() << "newSamplesCount = " << newSamplesCount;
-//    qDebug() << "_byteArray.size() = " << _byteArray.size();
 
     if (newSamplesCount == 0) {
         qDebug() << __FUNCTION__ << ": nothing new...";
@@ -306,8 +302,6 @@ void Lockin2::interpretInput()
     _yValue = y;
 
     emit newValues(_timeValue, x, y);
-
-//    qDebug() << time.elapsed() << "ms";
 }
 
 QList<QPair<qreal, qreal> > Lockin2::parseChopperSignal(QList<unsigned int> signal, quint32 avg, qreal phase)

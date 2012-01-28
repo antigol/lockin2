@@ -3,6 +3,7 @@
 #include "audioutils.hpp"
 #include <QDebug>
 #include <QTime>
+#include <iostream>
 
 Lockin2Gui::Lockin2Gui(QWidget *parent) :
     QWidget(parent),
@@ -51,6 +52,8 @@ void Lockin2Gui::getValues(qreal time, qreal x, qreal y)
     info = info.arg(y / x * 100.0);
     info = info.arg(QTime().addMSecs(1000*time).toString("h:m:s,zzz"));
     ui->info->setText(info);
+
+    std::cout << time << " " << x << std::endl;
 }
 
 QAudioFormat Lockin2Gui::foundFormat(const QAudioDeviceInfo &device)
