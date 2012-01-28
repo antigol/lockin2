@@ -1,14 +1,18 @@
 #include "lockin2.hpp"
 #include <cmath>
 #include <QDebug>
+#include <QTime>
 
 Lockin2::Lockin2(QObject *parent) :
     QObject(parent)
 {
-    _buffer = new QBuffer(&_byteArray, this);
-    _buffer->open(QIODevice::ReadWrite);
+//    _bufferWrite = new QBuffer(&_byteArray, this);
+//    _bufferWrite->open(QIODevice::WriteOnly | QIODevice::Unbuffered);
 
-    _inputStream.setDevice(_buffer);
+//    _bufferRead = new QBuffer(&_byteArray, this);
+//    _bufferRead->open(QIODevice::ReadOnly | QIODevice::Unbuffered);
+    _fifo = new QFifo(this);
+    _fifo->open(QIODevice::ReadWrite | QIODevice::Unbuffered);
 
     _audioInput = 0;
 
@@ -31,10 +35,6 @@ bool Lockin2::isFormatSupported(const QAudioFormat &format)
     if (format.sampleType() != QAudioFormat::UnSignedInt) {
         return false;
     }
-
-//    if (format.sampleSize() != 32) {
-//        return false;
-//    }
 
     return true;
 }
@@ -61,7 +61,7 @@ bool Lockin2::start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &for
         _audioInput->setNotifyInterval(_outputPeriod * 1000.0);
         connect(_audioInput, SIGNAL(notify()), this, SLOT(interpretInput()));
 
-        _inputStream.setByteOrder((QDataStream::ByteOrder)format.byteOrder());
+        _byteOrder = (QDataStream::ByteOrder)format.byteOrder();
 
         _sampleSize = format.sampleSize();
 
@@ -74,7 +74,8 @@ bool Lockin2::start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &for
         // nombre d'échantillons pour un affichage de vumeter
         _sampleVumeter = format.sampleRate() * _vumeterTime;
 
-        _audioInput->start(_buffer);
+//        _audioInput->start(_bufferWrite);
+        _audioInput->start(_fifo);
     } else {
         qDebug() << __FUNCTION__ << ": format not supported, can't start";
         return false;
@@ -134,6 +135,7 @@ QList<QPair<qreal, qreal> > Lockin2::vumeterData()
 void Lockin2::stop()
 {
     if (_audioInput != 0) {
+        _audioInput->stop();
         delete _audioInput;
         _audioInput = 0;
     } else {
@@ -143,6 +145,9 @@ void Lockin2::stop()
 
 void Lockin2::interpretInput()
 {
+    QTime time;
+    time.start();
+
     _timeValue += _outputPeriod;
 
     // récupère les nouvelles valeurs
@@ -163,26 +168,41 @@ void Lockin2::interpretInput()
     int newSamplesCount = 0;
     quint64 avgRight = 0;
 
-    qDebug() << _byteArray.size();
-    while (_byteArray.size() >= qint64(2 * _sampleSize / 8)) {
+//    QDataStream in(_bufferRead);
+    QDataStream in(_fifo);
+    in.setByteOrder(_byteOrder);
+
+    while (!in.atEnd()) {
         unsigned int left, right;
+        quint8 i8;
+        quint16 i16;
+        quint32 i32;
+        quint64 i64;
 
         switch (_sampleSize) {
         case 8:
-            _inputStream >> (quint8 &)left;
-            _inputStream >> (quint8 &)right;
+            in >> i8;
+            left = i8;
+            in >> i8;
+            right = i8;
             break;
         case 16:
-            _inputStream >> (quint16 &)left;
-            _inputStream >> (quint16 &)right;
+            in >> i16;
+            left = i16;
+            in >> i16;
+            right = i16;
             break;
         case 32:
-            _inputStream >> (quint32 &)left;
-            _inputStream >> (quint32 &)right;
+            in >> i32;
+            left = i32;
+            in >> i32;
+            right = i32;
             break;
         case 64:
-            _inputStream >> (quint64 &)left;
-            _inputStream >> (quint64 &)right;
+            in >> i64;
+            left = i64;
+            in >> i64;
+            right = i64;
             break;
         }
 
@@ -192,6 +212,8 @@ void Lockin2::interpretInput()
         avgRight += right;
         newSamplesCount++;
     }
+//    qDebug() << "newSamplesCount = " << newSamplesCount;
+//    qDebug() << "_byteArray.size() = " << _byteArray.size();
 
     if (newSamplesCount == 0) {
         qDebug() << __FUNCTION__ << ": nothing new...";
@@ -264,6 +286,8 @@ void Lockin2::interpretInput()
     _yValue = y;
 
     emit newValues(_timeValue, x, y);
+
+//    qDebug() << time.elapsed() << "ms";
 }
 
 QList<QPair<qreal, qreal> > Lockin2::parseChopperSignal(QList<unsigned int> signal, quint32 avg, qreal phase)

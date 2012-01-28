@@ -2,6 +2,7 @@
 #define LOCKIN2_HPP
 
 #include "lockin2_global.hpp"
+#include "qfifo.hpp"
 
 #include <QObject>
 #include <QAudioInput>
@@ -55,9 +56,11 @@ private:
      */
     int _sampleSize;
 
-    QBuffer *_buffer;
+//    QBuffer *_bufferWrite;
+//    QBuffer *_bufferRead;
+    QFifo *_fifo;
     QByteArray _byteArray;
-    QDataStream _inputStream;
+    QDataStream::ByteOrder _byteOrder;
 
     QList<QPair<qreal, qreal> > _data;
     quint32 _avgRight;

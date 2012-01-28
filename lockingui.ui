@@ -27,10 +27,18 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QLCDNumber" name="lcdForXValue"/>
+      <widget class="QLCDNumber" name="lcdForXValue">
+       <property name="numDigits">
+        <number>10</number>
+       </property>
+      </widget>
      </item>
      <item>
-      <widget class="QLCDNumber" name="lcdForYValue"/>
+      <widget class="QLCDNumber" name="lcdForYValue">
+       <property name="numDigits">
+        <number>10</number>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>

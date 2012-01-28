@@ -54,7 +54,7 @@ void Lockin2Gui::on_buttonStartStop_clicked()
 
 void Lockin2Gui::getValues(qreal time, qreal x, qreal y)
 {
-    qDebug() << time;
+//    qDebug() << time;
     ui->lcdForXValue->display(x);
     ui->lcdForYValue->display(y);
 }
