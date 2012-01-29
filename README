@@ -1,0 +1,4 @@
+lockin simplifié qui utilise QAudioInput du module multimedia de Qt.
+
+dépendant de xygraph : https://github.com/antigol/xygraph
+
