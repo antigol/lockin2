@@ -192,58 +192,8 @@ void Lockin2::interpretInput()
      * 0.5s 500Hz -> 0.8%
      * 1.0s 500Hz -> 0.4%
      */
-    QList<qreal> leftSignal;
-    QList<unsigned int> chopperSignal;
 
-    int newSamplesCount = 0;
-
-    QDataStream in(_fifo);
-    in.setByteOrder(_byteOrder);
-
-    while (!in.atEnd()) {
-        unsigned int left, right;
-
-        if (_sampleSize == 8) {
-            quint8 i;
-
-            in >> i;
-            left = i;
-
-            in >> i;
-            right = i;
-        } else if (_sampleSize == 16) {
-            quint16 i;
-
-            in >> i;
-            left = i;
-
-            in >> i;
-            right = i;
-        } else if (_sampleSize == 32) {
-            quint32 i;
-
-            in >> i;
-            left = i;
-
-            in >> i;
-            right = i;
-        } else {
-            left = right = 0;
-            qDebug() << __FUNCTION__ << ": sampleSize not valid";
-        }
-
-        leftSignal << left;
-        chopperSignal << right;
-
-        newSamplesCount++;
-    }
-
-    if (newSamplesCount == 0) {
-        qDebug() << __FUNCTION__ << ": nothing new...";
-        return;
-    }
-
-    unsigned int avg = 0;
+    qreal avg = 0;
     switch (_sampleSize) {
     case 8:
         avg = 128;
@@ -256,17 +206,69 @@ void Lockin2::interpretInput()
         break;
     }
 
+    QList<qreal> leftSignal;
+    QList<unsigned int> chopperSignal;
+
+    int newSamplesCount = 0;
+
+    QDataStream in(_fifo);
+    in.setByteOrder(_byteOrder);
+
+    while (!in.atEnd()) {
+        qreal left;
+        unsigned int right;
+
+        if (_sampleSize == 8) {
+            quint8 i;
+
+            in >> i;
+            left = qreal(i);
+
+            in >> i;
+            right = i;
+        } else if (_sampleSize == 16) {
+            quint16 i;
+
+            in >> i;
+            left = qreal(i);
+
+            in >> i;
+            right = i;
+        } else if (_sampleSize == 32) {
+            quint32 i;
+
+            in >> i;
+            left = qreal(i);
+
+            in >> i;
+            right = i;
+        } else {
+            left = right = 0;
+            qDebug() << __FUNCTION__ << ": sampleSize not valid";
+        }
+
+        leftSignal << left / avg;
+        chopperSignal << right;
+
+        newSamplesCount++;
+    }
+
+    if (newSamplesCount == 0) {
+        qDebug() << __FUNCTION__ << ": nothing new...";
+        return;
+    }
+
+
     QList<QPair<qreal, qreal> > chopperSinCos = parseChopperSignal(chopperSignal, avg, _phase);
 
-    // multiplie le leftSignal (>0) par chopperSinCos ([-1;1])
+    // multiplie le leftSignal ([0;2]) par chopperSinCos ([-1;1])
     for (int i = 0; i < leftSignal.size(); ++i) {
         qreal x, y;
-        if (chopperSinCos[i].first != 2.0) { // 2.0 est la valeur qui indique ignoreValue dans parseChopperSignal(...)
+        if (chopperSinCos[i].first != 3.0) { // 3.0 est la valeur qui indique ignoreValue dans parseChopperSignal(...)
             x = chopperSinCos[i].first * leftSignal[i]; // sin
             y = chopperSinCos[i].second * leftSignal[i]; // cos
         } else {
-            x = y = 0.5; // valeur impossible sin(x) = cos(x) = ~0.707 et comme leftSignal est issue de nombres entiers
-            // la plus petite valeur positive avec (x = y) est 0.707
+            x = y = 3.0; // ignore value
         }
         _dataXY << QPair<qreal, qreal>(x, y);
     }
@@ -278,7 +280,7 @@ void Lockin2::interpretInput()
             if (_vumeterData.size() >= _sampleVumeter)
                 break;
 
-            if (chopperSinCos[i].first != 2.0) {
+            if (chopperSinCos[i].first != 3.0) {
                 _vumeterData.prepend(QPair<qreal, qreal>(leftSignal[i], chopperSinCos[i].first));
             }
         }
@@ -306,8 +308,8 @@ void Lockin2::interpretInput()
     qreal y = 0.0;
 
     for (int i = 0; i < _dataXY.size(); ++i) {
-        // deux fois 0.5 indique ignoreValue
-        if (_dataXY[i].first != 0.5 && _dataXY[i].second != 0.5) {
+        // deux fois 3.0 indique ignoreValue
+        if (_dataXY[i].first != 3.0) {
             x += _dataXY[i].first;
             y += _dataXY[i].second;
             dataCount += 1.0;
@@ -333,7 +335,7 @@ void Lockin2::interpretInput()
 QList<QPair<qreal, qreal> > Lockin2::parseChopperSignal(QList<unsigned int> signal, unsigned int avg, qreal phase)
 {
     // transforme le signal en sin et cos déphasé
-    // dans les bords, la valeur 2.0 indique d'on ignore l'element
+    // dans les bords, la valeur 3.0 indique d'on ignore l'element
 
     QList<QPair<qreal, qreal> > out;
 
@@ -352,7 +354,7 @@ QList<QPair<qreal, qreal> > Lockin2::parseChopperSignal(QList<unsigned int> sign
             if (ignore) {
                 // que pour les premières valeurs
                 for (int i = 0; i < periodSize; ++i)
-                    out << QPair<qreal, qreal>(2.0, 2.0);
+                    out << QPair<qreal, qreal>(3.0, 3.0);
                 ignore = false;
             } else {
                 // construire le sin et le cos
@@ -369,7 +371,7 @@ QList<QPair<qreal, qreal> > Lockin2::parseChopperSignal(QList<unsigned int> sign
     }
 
     while (out.size() < signal.size())
-        out << QPair<qreal, qreal>(2.0, 2.0);
+        out << QPair<qreal, qreal>(3.0, 3.0);
 
     return out;
 }

@@ -51,7 +51,7 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
 
 
     _output = new XYScene(this);
-    _output->setZoom(0.0, 15.0, -100.0, 100.0);
+    _output->setZoom(0.0, 15.0, -2.0, 2.0);
     ui->output->setScene(_output);
 
     _xScatterPlot = new XYScatterplot(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::red), 1.5));
@@ -89,6 +89,7 @@ void Lockin2Gui::getValues(qreal time, qreal x, qreal y)
     info = info.arg(qRound(y / x * 1000.0)/10.0);
     info = info.arg(QTime().addMSecs(1000*time).toString("h:m:s,zzz"));
     ui->info->setText(info);
+
     std::cout << time << " " << x << std::endl;
 
     _xScatterPlot->append(QPointF(time, x));
