@@ -293,6 +293,7 @@ void Lockin2::interpretInput()
 
     if (_dataXY.size() < _sampleIntegration) {
         // pas encore assez d'elements pour faire la moyenne
+        emit info("wait more input data...");
         return;
     }
 
@@ -315,6 +316,7 @@ void Lockin2::interpretInput()
 
     if (dataCount == 0.0) {
         qDebug() << __FUNCTION__ << ": no data usable";
+        emit info("signal too low");
         return;
     }
 

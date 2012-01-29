@@ -4,6 +4,7 @@
 #include <xygraph/xyscene.hpp>
 #include <QDebug>
 #include <QTime>
+#include <QSettings>
 #include <iostream>
 
 Lockin2Gui::Lockin2Gui(QWidget *parent) :
@@ -28,8 +29,10 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
         }
     }
 
-    ui->outputFrequency->setValue(1.0 / _lockin->outputPeriod());
-    ui->integrationTime->setValue(_lockin->integrationTime());
+    QSettings set;
+    ui->outputFrequency->setValue(set.value("outputFrequency", 1.0 / _lockin->outputPeriod()).toDouble());
+    ui->integrationTime->setValue(set.value("integrationTime", _lockin->integrationTime()).toDouble());
+    _lockin->setPhase(set.value("phase", 0).toDouble());
 
     connect(_lockin, SIGNAL(newValues(qreal,qreal,qreal)), this, SLOT(getValues(qreal,qreal,qreal)));
 
@@ -38,6 +41,14 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
 
     _vuScatterPlot = new XYScatterplot(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::green), 1.5));
     _vumeter->addScatterplot(_vuScatterPlot);
+
+
+    _pll = new XYScene(this);
+    ui->pll->setScene(_pll);
+
+    _pllScatterPlot = new XYScatterplot(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::green), 1.5));
+    _pll->addScatterplot(_pllScatterPlot);
+
 
     _output = new XYScene(this);
     _output->setZoom(0.0, 15.0, -100.0, 100.0);
@@ -52,6 +63,10 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
 
 Lockin2Gui::~Lockin2Gui()
 {
+    QSettings set;
+    set.setValue("outputFrequency", ui->outputFrequency->value());
+    set.setValue("integrationTime", ui->integrationTime->value());
+    set.setValue("phase", _lockin->phase());
     delete ui;
 }
 
@@ -85,14 +100,20 @@ void Lockin2Gui::getValues(qreal time, qreal x, qreal y)
 
     QList<QPair<qreal, qreal> > data = _lockin->vumeterData();
     _vuScatterPlot->clear();
+    _pllScatterPlot->clear();
     for (int i = 0; i < data.size(); ++i) {
         _vuScatterPlot->append(QPointF(i, data[i].first));
+        _pllScatterPlot->append(QPointF(i, data[i].second));
     }
 
     _vumeter->autoZoom();
     _vumeter->relativeZoom(1.2);
 
+    _pll->autoZoom();
+    _pll->relativeZoom(1.2);
+
     _output->regraph();
+    _pll->regraph();
     _vumeter->regraph();
 }
 
@@ -153,12 +174,14 @@ void Lockin2Gui::startLockin()
 
     _lockin->setOutputPeriod(1.0 / ui->outputFrequency->value());
     _lockin->setIntegrationTime(ui->integrationTime->value());
-    _lockin->setVumeterTime(_lockin->outputPeriod() * 0.1);
+    _lockin->setVumeterTime(0.01);
 
     if (_lockin->start(deviceInfo, format)) {
         _xScatterPlot->clear();
         _yScatterPlot->clear();
         _vuScatterPlot->clear();
+        _pllScatterPlot->clear();
+
         ui->frame->setEnabled(false);
         ui->buttonStartStop->setText("Stop !");
     } else {

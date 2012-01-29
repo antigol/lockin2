@@ -44,7 +44,11 @@
        <widget class="QDoubleSpinBox" name="outputFrequency"/>
       </item>
       <item row="2" column="1">
-       <widget class="QDoubleSpinBox" name="integrationTime"/>
+       <widget class="QDoubleSpinBox" name="integrationTime">
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
       </item>
       <item row="2" column="0">
        <widget class="QLabel" name="integrationTimeSLabel">
@@ -89,9 +93,12 @@
       <attribute name="title">
        <string>Vumeter</string>
       </attribute>
-      <layout class="QHBoxLayout" name="horizontalLayout_4">
+      <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
         <widget class="XYGraph" name="vumeter"/>
+       </item>
+       <item>
+        <widget class="XYGraph" name="pll"/>
        </item>
       </layout>
      </widget>

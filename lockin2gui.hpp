@@ -33,8 +33,12 @@ private:
 
     Ui::LockinGui *ui;
     Lockin2 *_lockin;
+
     XYScene *_vumeter;
     XYScatterplot *_vuScatterPlot;
+
+    XYScene *_pll;
+    XYScatterplot *_pllScatterPlot;
 
     XYScene *_output;
     XYScatterplot *_xScatterPlot;

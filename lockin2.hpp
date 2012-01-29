@@ -40,6 +40,7 @@ public:
 
 signals:
     void newValues(qreal time, qreal x, qreal y);
+    void info(QString msg);
 
 private slots:
     void interpretInput();
