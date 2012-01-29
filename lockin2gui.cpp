@@ -1,6 +1,7 @@
 #include "lockin2gui.hpp"
 #include "ui_lockingui.h"
 #include "audioutils.hpp"
+#include <xygraph/xyscene.hpp>
 #include <QDebug>
 #include <QTime>
 #include <iostream>
@@ -11,10 +12,12 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    _lockin = new Lockin2(this);
+
     foreach (const QAudioDeviceInfo &deviceInfo, QAudioDeviceInfo::availableDevices(QAudio::AudioInput)) {
         QAudioFormat format = foundFormat(deviceInfo);
 
-        if (deviceInfo.isFormatSupported(format) && lockin.isFormatSupported(format)) {
+        if (deviceInfo.isFormatSupported(format) && _lockin->isFormatSupported(format)) {
             ui->audioDeviceSelector->addItem(deviceInfo.deviceName(), qVariantFromValue(deviceInfo));
             qDebug() << deviceInfo.deviceName() << " added in the list";
         } else {
@@ -22,10 +25,18 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
         }
     }
 
-    ui->outputFrequency->setValue(1.0 / lockin.outputPeriod());
-    ui->integrationTime->setValue(lockin.integrationTime());
+    ui->outputFrequency->setValue(1.0 / _lockin->outputPeriod());
+    ui->integrationTime->setValue(_lockin->integrationTime());
 
-    connect(&lockin, SIGNAL(newValues(qreal,qreal,qreal)), this, SLOT(getValues(qreal,qreal,qreal)));
+    connect(_lockin, SIGNAL(newValues(qreal,qreal,qreal)), this, SLOT(getValues(qreal,qreal,qreal)));
+
+    _vumeter = new XYScene();
+    _xScatterPlot = new XYScatterplot(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(Qt::red));
+    _yScatterPlot = new XYScatterplot(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(Qt::lightGray));
+    _vumeter->addScatterplot(_xScatterPlot);
+    _vumeter->addScatterplot(_yScatterPlot);
+    _vumeter->setZoom(0.0, 15.0, 0.0, 100.0);
+    ui->vumeter->setScene(_vumeter);
 }
 
 Lockin2Gui::~Lockin2Gui()
@@ -35,7 +46,7 @@ Lockin2Gui::~Lockin2Gui()
 
 void Lockin2Gui::on_buttonStartStop_clicked()
 {
-    if (lockin.isRunning()) {
+    if (_lockin->isRunning()) {
         stopLockin();
     } else {
         startLockin();
@@ -52,8 +63,16 @@ void Lockin2Gui::getValues(qreal time, qreal x, qreal y)
     info = info.arg(y / x * 100.0);
     info = info.arg(QTime().addMSecs(1000*time).toString("h:m:s,zzz"));
     ui->info->setText(info);
-
     std::cout << time << " " << x << std::endl;
+
+    _xScatterPlot->append(QPointF(time, x));
+    _yScatterPlot->append(QPointF(time, y));
+    RealZoom zoom = _vumeter->zoom();
+    if (zoom.xMin() < time && zoom.xMax() < time && zoom.xMax() > time * 0.8)
+        zoom.setXMax(time * 1.05);
+
+    _vumeter->setZoom(zoom);
+    _vumeter->regraph();
 }
 
 template <typename T>
@@ -87,7 +106,7 @@ QAudioFormat Lockin2Gui::foundFormat(const QAudioDeviceInfo &device)
 
 void Lockin2Gui::on_buttonAutoPhase_clicked()
 {
-    lockin.setPhase(lockin.autoPhase());
+    _lockin->setPhase(_lockin->autoPhase());
 }
 
 void Lockin2Gui::startLockin()
@@ -102,10 +121,11 @@ void Lockin2Gui::startLockin()
     qDebug() << "========== format infos ========== ";
     showQAudioFormat(format);
 
-    lockin.setOutputPeriod(1.0 / ui->outputFrequency->value());
-    lockin.setIntegrationTime(ui->integrationTime->value());
+    _lockin->setOutputPeriod(1.0 / ui->outputFrequency->value());
+    _lockin->setIntegrationTime(ui->integrationTime->value());
 
-    if (lockin.start(deviceInfo, format)) {
+    if (_lockin->start(deviceInfo, format)) {
+        _xScatterPlot->clear();
         ui->frame->setEnabled(false);
         ui->buttonStartStop->setText("Stop !");
     } else {
@@ -115,7 +135,7 @@ void Lockin2Gui::startLockin()
 
 void Lockin2Gui::stopLockin()
 {
-    lockin.stop();
+    _lockin->stop();
     ui->frame->setEnabled(true);
     ui->buttonStartStop->setText("Start");
 }

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>355</width>
-    <height>323</height>
+    <width>381</width>
+    <height>409</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -54,12 +54,6 @@
        </widget>
       </item>
      </layout>
-     <zorder>label</zorder>
-     <zorder>audioDeviceSelector</zorder>
-     <zorder>outputFrequencyHzLabel</zorder>
-     <zorder>outputFrequency</zorder>
-     <zorder>integrationTime</zorder>
-     <zorder>integrationTimeSLabel</zorder>
     </widget>
    </item>
    <item>
@@ -87,9 +81,18 @@
     </layout>
    </item>
    <item>
+    <widget class="XYGraph" name="vumeter"/>
+   </item>
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QLCDNumber" name="lcdForXValue">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>30</height>
+        </size>
+       </property>
        <property name="numDigits">
         <number>10</number>
        </property>
@@ -135,6 +138,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>XYGraph</class>
+   <extends>QGraphicsView</extends>
+   <header location="global">xygraph/xygraph.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

@@ -4,10 +4,9 @@
 #
 #-------------------------------------------------
 
-QT       += opengl multimedia
+QT       += opengl multimedia gui
 
 TARGET = lockin2
-TEMPLATE = lib
 
 DEFINES += LOCKIN2_LIBRARY
 
@@ -15,15 +14,13 @@ SOURCES += lockin2.cpp \
     qfifo.cpp \
     lockin2gui.cpp \
     audioutils.cpp \
-    xyscene.cpp
+    main.cpp
 
 HEADERS += lockin2.hpp\
         lockin2_global.hpp \
     qfifo.hpp \
     lockin2gui.hpp \
-    audioutils.hpp \
-    xyscene.hpp \
-    realzoom.hpp
+    audioutils.hpp
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN
@@ -40,7 +37,7 @@ unix:!symbian {
         target.path = /opt/usr/lib
     } else {
         target.path = /usr/local/lib
-        headers.files = lockin2.hpp lockin2gui.hpp
+        headers.files = lockin2.hpp lockin2gui.hpp lockin2_global.hpp
         headers.path = /usr/local/include/lockin2
     }
     INSTALLS += target headers
@@ -49,6 +46,7 @@ unix:!symbian {
 FORMS += \
     lockingui.ui
 
+LIBS += -lxygraph
 
 ## lancer la commande 'sudo ldconfig' pour résoudre le problème d'execution
 

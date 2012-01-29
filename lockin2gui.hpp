@@ -2,14 +2,11 @@
 #define LOCKINGUI_HPP
 
 #include "lockin2_global.hpp"
+#include "lockin2.hpp"
 
 #include <QWidget>
-
-#if defined(LOCKIN2_LIBRARY)
-#  include "lockin2.hpp"
-#else
-#  include <lockin2/lockin2.hpp>
-#endif
+#include <xygraph/xygraph.hpp>
+#include <xygraph/xyscene.hpp>
 
 namespace Ui {
 class LockinGui;
@@ -35,7 +32,10 @@ private:
     QAudioFormat foundFormat(const QAudioDeviceInfo &device);
 
     Ui::LockinGui *ui;
-    Lockin2 lockin;
+    Lockin2 *_lockin;
+    XYScene *_vumeter;
+    XYScatterplot *_xScatterPlot;
+    XYScatterplot *_yScatterPlot;
 };
 
 #endif // LOCKINGUI_HPP
