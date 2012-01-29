@@ -22,6 +22,9 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
             qDebug() << deviceInfo.deviceName() << " added in the list";
         } else {
             qDebug() << deviceInfo.deviceName() << " is not supported";
+            showQAudioDeviceInfo(deviceInfo);
+            showQAudioFormat(format);
+            qDebug() << " ";
         }
     }
 
@@ -30,13 +33,21 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
 
     connect(_lockin, SIGNAL(newValues(qreal,qreal,qreal)), this, SLOT(getValues(qreal,qreal,qreal)));
 
-    _vumeter = new XYScene();
-    _xScatterPlot = new XYScatterplot(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(Qt::red));
-    _yScatterPlot = new XYScatterplot(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(Qt::lightGray));
-    _vumeter->addScatterplot(_xScatterPlot);
-    _vumeter->addScatterplot(_yScatterPlot);
-    _vumeter->setZoom(0.0, 15.0, 0.0, 100.0);
+    _vumeter = new XYScene(this);
     ui->vumeter->setScene(_vumeter);
+
+    _vuScatterPlot = new XYScatterplot(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::green), 1.5));
+    _vumeter->addScatterplot(_vuScatterPlot);
+
+    _output = new XYScene(this);
+    _output->setZoom(0.0, 15.0, -100.0, 100.0);
+    ui->output->setScene(_output);
+
+    _xScatterPlot = new XYScatterplot(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::red), 1.5));
+    _output->addScatterplot(_xScatterPlot);
+    _yScatterPlot = new XYScatterplot(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::black), 1.5));
+    _output->addScatterplot(_yScatterPlot);
+
 }
 
 Lockin2Gui::~Lockin2Gui()
@@ -60,18 +71,28 @@ void Lockin2Gui::getValues(qreal time, qreal x, qreal y)
     QString info("y/x = %1%\n"
                  "execution time = %2");
 
-    info = info.arg(y / x * 100.0);
+    info = info.arg(qRound(y / x * 1000.0)/10.0);
     info = info.arg(QTime().addMSecs(1000*time).toString("h:m:s,zzz"));
     ui->info->setText(info);
     std::cout << time << " " << x << std::endl;
 
     _xScatterPlot->append(QPointF(time, x));
     _yScatterPlot->append(QPointF(time, y));
-    RealZoom zoom = _vumeter->zoom();
+    RealZoom zoom = _output->zoom();
     if (zoom.xMin() < time && zoom.xMax() < time && zoom.xMax() > time * 0.8)
         zoom.setXMax(time * 1.20);
+    _output->setZoom(zoom);
 
-    _vumeter->setZoom(zoom);
+    QList<QPair<qreal, qreal> > data = _lockin->vumeterData();
+    _vuScatterPlot->clear();
+    for (int i = 0; i < data.size(); ++i) {
+        _vuScatterPlot->append(QPointF(i, data[i].first));
+    }
+
+    _vumeter->autoZoom();
+    _vumeter->relativeZoom(1.2);
+
+    _output->regraph();
     _vumeter->regraph();
 }
 
@@ -87,19 +108,28 @@ T maxInList(const QList<T> &list, T def)
 QAudioFormat Lockin2Gui::foundFormat(const QAudioDeviceInfo &device)
 {
     QAudioFormat format = device.preferredFormat();
+    format.setChannelCount(2);
+    format.setCodec("audio/pcm");
+    format.setSampleType(QAudioFormat::UnSignedInt);
 
     format.setSampleRate(maxInList(device.supportedSampleRates(), 44100));
-    format.setChannelCount(2);
-    format.setCodec("audio/pcm");
     format.setSampleSize(32);
-    format.setSampleType(QAudioFormat::UnSignedInt);
 
-    if (!device.isFormatSupported(format))
+
+    if (!device.isFormatSupported(format)) {
         format = device.nearestFormat(format);
 
-    format.setChannelCount(2);
-    format.setCodec("audio/pcm");
-    format.setSampleType(QAudioFormat::UnSignedInt);
+        // ces réglages sont indispensables pour le lockin
+        format.setChannelCount(2);
+        format.setCodec("audio/pcm");
+        format.setSampleType(QAudioFormat::UnSignedInt);
+    }
+
+    if (!device.isFormatSupported(format)) {
+        // on essaye encore avec la pire merde
+        format.setSampleRate(8000);
+        format.setSampleSize(8);
+    }
 
     return format;
 }
@@ -123,10 +153,12 @@ void Lockin2Gui::startLockin()
 
     _lockin->setOutputPeriod(1.0 / ui->outputFrequency->value());
     _lockin->setIntegrationTime(ui->integrationTime->value());
+    _lockin->setVumeterTime(_lockin->outputPeriod() * 0.1);
 
     if (_lockin->start(deviceInfo, format)) {
         _xScatterPlot->clear();
         _yScatterPlot->clear();
+        _vuScatterPlot->clear();
         ui->frame->setEnabled(false);
         ui->buttonStartStop->setText("Stop !");
     } else {

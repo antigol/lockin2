@@ -196,9 +196,7 @@ void Lockin2::interpretInput()
     QList<unsigned int> chopperSignal;
 
     int newSamplesCount = 0;
-    quint64 avgRight = 0;
 
-//    QDataStream in(_bufferRead);
     QDataStream in(_fifo);
     in.setByteOrder(_byteOrder);
 
@@ -237,7 +235,6 @@ void Lockin2::interpretInput()
         leftSignal << left;
         chopperSignal << right;
 
-        avgRight += right;
         newSamplesCount++;
     }
 
@@ -246,9 +243,20 @@ void Lockin2::interpretInput()
         return;
     }
 
-    avgRight /= newSamplesCount;
+    unsigned int avg = 0;
+    switch (_sampleSize) {
+    case 8:
+        avg = 128;
+        break;
+    case 16:
+        avg = 32768;
+        break;
+    case 32:
+        avg = 2147483648;
+        break;
+    }
 
-    QList<QPair<qreal, qreal> > chopperSinCos = parseChopperSignal(chopperSignal, avgRight, _phase);
+    QList<QPair<qreal, qreal> > chopperSinCos = parseChopperSignal(chopperSignal, avg, _phase);
 
     // multiplie le leftSignal (>0) par chopperSinCos ([-1;1])
     for (int i = 0; i < leftSignal.size(); ++i) {
@@ -304,6 +312,12 @@ void Lockin2::interpretInput()
             dataCount += 1.0;
         }
     }
+
+    if (dataCount == 0.0) {
+        qDebug() << __FUNCTION__ << ": no data usable";
+        return;
+    }
+
     x /= dataCount;
     y /= dataCount;
 
@@ -314,7 +328,7 @@ void Lockin2::interpretInput()
     emit newValues(_timeValue, x, y);
 }
 
-QList<QPair<qreal, qreal> > Lockin2::parseChopperSignal(QList<unsigned int> signal, quint32 avg, qreal phase)
+QList<QPair<qreal, qreal> > Lockin2::parseChopperSignal(QList<unsigned int> signal, unsigned int avg, qreal phase)
 {
     // transforme le signal en sin et cos déphasé
     // dans les bords, la valeur 2.0 indique d'on ignore l'element
@@ -341,7 +355,7 @@ QList<QPair<qreal, qreal> > Lockin2::parseChopperSignal(QList<unsigned int> sign
             } else {
                 // construire le sin et le cos
                 for (int i = 0; i < periodSize; ++i) {
-                    qreal angle = M_2_PI * (qreal)i / (qreal)periodSize + phase;
+                    qreal angle = 2.0 * M_PI * (qreal(i) / qreal(periodSize)) + phase;
                     out << QPair<qreal, qreal>(std::sin(angle), std::cos(angle));
                 }
             }

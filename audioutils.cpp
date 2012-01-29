@@ -3,22 +3,22 @@
 
 void showQAudioFormat(const QAudioFormat &format)
 {
-    qDebug() << "codec : " << format.codec();
-    qDebug() << "Sample Rate : " << format.sampleRate();
+    qDebug() << "codec              : " << format.codec();
+    qDebug() << "Sample Rate        : " << format.sampleRate();
     qDebug() << "Number of channels : " << format.channelCount();
-    qDebug() << "Sample size : " << format.sampleSize();
+    qDebug() << "Sample size        : " << format.sampleSize();
     switch (format.sampleType()) {
     case QAudioFormat::Unknown:
-        qDebug() << "Sample type : Unknown";
+        qDebug() << "Sample type        : Unknown";
         break;
     case QAudioFormat::SignedInt:
-        qDebug() << "Sample type : SignedInt";
+        qDebug() << "Sample type        : SignedInt";
         break;
     case QAudioFormat::UnSignedInt:
-        qDebug() << "Sample type : UnSignedInt";
+        qDebug() << "Sample type        : UnSignedInt";
         break;
     case QAudioFormat::Float:
-        qDebug() << "Sample type : Float";
+        qDebug() << "Sample type        : Float";
         break;
     }
     switch (format.byteOrder()) {
@@ -72,12 +72,12 @@ QStringList sampleTypesToString(QList<QAudioFormat::SampleType> list)
 
 void showQAudioDeviceInfo(const QAudioDeviceInfo &device)
 {
-    qDebug() << "Device name : " << device.deviceName();
-    qDebug() << "supported codecs : " << device.supportedCodecs();
-    qDebug() << "supported sample rate : " << device.supportedSampleRates();
+    qDebug() << "Device name             : " << device.deviceName();
+    qDebug() << "supported codecs        : " << device.supportedCodecs();
+    qDebug() << "supported sample rate   : " << device.supportedSampleRates();
     qDebug() << "supported channel count : " << device.supportedChannelCounts();
-    qDebug() << "supported sample size : " << device.supportedSampleSizes();
-    qDebug() << "supported sample type : " << sampleTypesToString(device.supportedSampleTypes());
-    qDebug() << "supported byte orders : " << byteOrdersToString(device.supportedByteOrders());
+    qDebug() << "supported sample size   : " << device.supportedSampleSizes();
+    qDebug() << "supported sample type   : " << sampleTypesToString(device.supportedSampleTypes());
+    qDebug() << "supported byte orders   : " << byteOrdersToString(device.supportedByteOrders());
 
 }
