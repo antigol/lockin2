@@ -48,5 +48,10 @@ FORMS += \
 
 LIBS += -lxygraph
 
+win32 {
+    INCLUDEPATH += ..
+    LIBS += -L.
+}
+
 ## lancer la commande 'sudo ldconfig' pour résoudre le problème d'execution
 
