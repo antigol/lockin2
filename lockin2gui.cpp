@@ -69,7 +69,7 @@ void Lockin2Gui::getValues(qreal time, qreal x, qreal y)
     _yScatterPlot->append(QPointF(time, y));
     RealZoom zoom = _vumeter->zoom();
     if (zoom.xMin() < time && zoom.xMax() < time && zoom.xMax() > time * 0.8)
-        zoom.setXMax(time * 1.05);
+        zoom.setXMax(time * 1.20);
 
     _vumeter->setZoom(zoom);
     _vumeter->regraph();
@@ -126,6 +126,7 @@ void Lockin2Gui::startLockin()
 
     if (_lockin->start(deviceInfo, format)) {
         _xScatterPlot->clear();
+        _yScatterPlot->clear();
         ui->frame->setEnabled(false);
         ui->buttonStartStop->setText("Stop !");
     } else {

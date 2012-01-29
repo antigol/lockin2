@@ -17,6 +17,7 @@ class LOCKIN2SHARED_EXPORT Lockin2 : public QObject {
     Q_OBJECT
 public:
     explicit Lockin2(QObject *parent = 0);
+    ~Lockin2();
 
     bool isRunning() const;
     bool isFormatSupported(const QAudioFormat &format);
@@ -67,8 +68,7 @@ private:
     QByteArray _byteArray;
     QDataStream::ByteOrder _byteOrder;
 
-    QList<QPair<qreal, qreal> > _data;
-    quint32 _avgRight;
+    QList<QPair<qreal, qreal> > _dataXY;
     qreal _outputPeriod;
 
     qreal _integrationTime;

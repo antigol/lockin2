@@ -23,6 +23,12 @@ Lockin2::Lockin2(QObject *parent) :
     setPhase(0.0);
 }
 
+Lockin2::~Lockin2()
+{
+    if (isRunning())
+        stop();
+}
+
 bool Lockin2::isRunning() const
 {
     return (_audioInput != 0);
@@ -80,7 +86,10 @@ bool Lockin2::start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &for
         // nombre d'échantillons pour un affichage de vumeter
         _sampleVumeter = format.sampleRate() * _vumeterTime;
 
-//        _audioInput->start(_bufferWrite);
+        // nettoyage des variables
+        _fifo->readAll(); // vide le fifo
+        _dataXY.clear(); // vide <x,y>
+
         _audioInput->start(_fifo);
     } else {
         qDebug() << __FUNCTION__ << ": format not supported, can't start";
@@ -251,7 +260,7 @@ void Lockin2::interpretInput()
             x = y = 0.5; // valeur impossible sin(x) = cos(x) = ~0.707 et comme leftSignal est issue de nombres entiers
             // la plus petite valeur positive avec (x = y) est 0.707
         }
-        _data << QPair<qreal, qreal>(x, y);
+        _dataXY << QPair<qreal, qreal>(x, y);
     }
 
     // renouvelle le view data (prend la fin des listes, qui correspond aux parties les plus récentes)
@@ -274,24 +283,24 @@ void Lockin2::interpretInput()
 
     // le nombre d'échantillons correslondant au temps d'integration
 
-    if (_data.size() < _sampleIntegration) {
+    if (_dataXY.size() < _sampleIntegration) {
         // pas encore assez d'elements pour faire la moyenne
         return;
     }
 
     // supprime les valeurs en trop
-    while (_data.size() > _sampleIntegration)
-        _data.removeFirst();
+    while (_dataXY.size() > _sampleIntegration)
+        _dataXY.removeFirst();
 
     qreal dataCount = 0.0;
     qreal x = 0.0;
     qreal y = 0.0;
 
-    for (int i = 0; i < _data.size(); ++i) {
+    for (int i = 0; i < _dataXY.size(); ++i) {
         // deux fois 0.5 indique ignoreValue
-        if (_data[i].first != 0.5 && _data[i].second != 0.5) {
-            x += _data[i].first;
-            y += _data[i].second;
+        if (_dataXY[i].first != 0.5 && _dataXY[i].second != 0.5) {
+            x += _dataXY[i].first;
+            y += _dataXY[i].second;
             dataCount += 1.0;
         }
     }

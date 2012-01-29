@@ -5,10 +5,7 @@ TARGET = lockin2
 
 SOURCES += main.cpp
 
-FORMS += \
-    lockingui.ui
-
-LIBS += -llockin2
+LIBS += -llockin2 -lxygraph
 
 ## lancer la commande 'sudo ldconfig' pour résoudre le problème d'execution
 

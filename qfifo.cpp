@@ -19,6 +19,7 @@ qint64 QFifo::readData(char *data, qint64 len)
 {
     if ((len = qMin(len, qint64(_data.size()))) <= 0)
         return qint64(0);
+
     memcpy(data, _data.constData(), len);
     _data = _data.right(_data.size() - len);
     return len;
