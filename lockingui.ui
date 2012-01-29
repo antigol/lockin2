@@ -74,28 +74,20 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
-     <item>
-      <widget class="QPushButton" name="buttonStartStop">
-       <property name="text">
-        <string>Start</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
+    <widget class="QPushButton" name="buttonStartStop">
+     <property name="text">
+      <string>Start</string>
+     </property>
+     <property name="autoDefault">
+      <bool>true</bool>
+     </property>
+     <property name="default">
+      <bool>true</bool>
+     </property>
+     <property name="flat">
+      <bool>false</bool>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QTabWidget" name="tabWidget">
@@ -213,6 +205,18 @@
    <header location="global">xygraph/xygraph.hpp</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>audioDeviceSelector</tabstop>
+  <tabstop>outputFrequency</tabstop>
+  <tabstop>integrationTime</tabstop>
+  <tabstop>buttonStartStop</tabstop>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>vumeter</tabstop>
+  <tabstop>pll</tabstop>
+  <tabstop>vumeterTime</tabstop>
+  <tabstop>buttonAutoPhase</tabstop>
+  <tabstop>output</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

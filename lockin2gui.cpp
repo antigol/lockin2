@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QTime>
 #include <QSettings>
+#include <QMessageBox>
 #include <iostream>
 
 Lockin2Gui::Lockin2Gui(QWidget *parent) :
@@ -16,19 +17,21 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
     _lockin = new Lockin2(this);
 
     foreach (const QAudioDeviceInfo &deviceInfo, QAudioDeviceInfo::availableDevices(QAudio::AudioInput)) {
-        QAudioFormat format = foundFormat(deviceInfo);
+//        QAudioFormat format = foundFormat(deviceInfo);
 
-        if (deviceInfo.isFormatSupported(format) && _lockin->isFormatSupported(format)) {
+//        if (deviceInfo.isFormatSupported(format) && _lockin->isFormatSupported(format)) {
             ui->audioDeviceSelector->addItem(deviceInfo.deviceName(), qVariantFromValue(deviceInfo));
-            qDebug() << deviceInfo.deviceName() << " added in the list";
-        } else {
-            qDebug() << deviceInfo.deviceName() << " is not supported :";
-            showQAudioDeviceInfo(deviceInfo);
-            format = deviceInfo.preferredFormat();
-            showQAudioFormat(format);
-            qDebug() << deviceInfo.isFormatSupported(format);
-            qDebug() << " ";
-        }
+//            qDebug() << deviceInfo.deviceName() << " added in the list";
+//        } else {
+//            qDebug() << deviceInfo.deviceName() << " is not supported :";
+//            qDebug() << "deviceInfo =";
+//            showQAudioDeviceInfo(deviceInfo);
+//            format = deviceInfo.preferredFormat();
+//            qDebug() << "format = deviceInfo.preferredFormat(); format =";
+//            showQAudioFormat(format);
+//            qDebug() << "deviceInfo.isFormatSupported(format) = " << deviceInfo.isFormatSupported(format);
+//            qDebug() << " ";
+//        }
     }
 
     QSettings set;
@@ -109,16 +112,23 @@ void Lockin2Gui::on_buttonStartStop_clicked()
 
 void Lockin2Gui::getValues(qreal time, qreal x, qreal y)
 {
+    QTime execTime;
+    execTime.start();
+
     ui->lcdForXValue->display(x);
 
     QString str = QString::fromUtf8("phase = %1°\n"
                                     "autophase = %2°\n"
-                                    "execution time = %3");
+                                    "execution time = %3\n"
+                                    "sample rate = %4 Hz\n"
+                                    "sample size = %5 bits");
 
     str = str.arg(_lockin->phase());
     qreal d = _lockin->autoPhase() - _lockin->phase();
     str = str.arg((d>0 ? "+":"")+QString::number(d));
     str = str.arg(QTime().addMSecs(1000*time).toString("h:m:s,zzz"));
+    str = str.arg(_lockin->format().sampleRate());
+    str = str.arg(_lockin->format().sampleSize());
 
     ui->info->setText(str);
 
@@ -128,7 +138,7 @@ void Lockin2Gui::getValues(qreal time, qreal x, qreal y)
     _xScatterPlot->append(QPointF(time, x));
     _yScatterPlot->append(QPointF(time, y));
     RealZoom zoom = _output->zoom();
-    if (zoom.xMin() < time && zoom.xMax() < time && zoom.xMax() > time * 0.8)
+    if (zoom.xMin() < time && zoom.xMax() < time && zoom.xMax() > time * 0.9)
         zoom.setXMax(time * 1.20);
     _output->setZoom(zoom);
 
@@ -154,6 +164,8 @@ void Lockin2Gui::getValues(qreal time, qreal x, qreal y)
     _pll->setXMax(msPerDot*data.size());
 
     _pll->regraph();
+
+    qDebug() << __FUNCTION__ << ": execution time : " << execTime.elapsed() << " ms";
 }
 
 template <typename T>
@@ -222,6 +234,7 @@ void Lockin2Gui::startLockin()
         ui->buttonStartStop->setText("Stop !");
     } else {
         qDebug() << __FUNCTION__ << ": cannot start lockin";
+        QMessageBox::warning(this, "Start lockin fail", "Start has failed, maybe retry can work.");
     }
 }
 
