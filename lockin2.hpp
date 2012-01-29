@@ -28,13 +28,14 @@ public:
     qreal outputPeriod() const;
     void setIntegrationTime(qreal integrationTime);
     qreal integrationTime() const;
-    void setVumeterTime(qreal vumeterTime); // le signal qui est sauvé pour être affiché à l'utilisateur
 
     // peu être appelé quand sa tourne:
+    void setVumeterTime(qreal vumeterTime); // le signal qui est sauvé pour être affiché à l'utilisateur
     void setPhase(qreal phase);
     qreal phase() const;
     qreal autoPhase() const;
     QList<QPair<qreal, qreal> > vumeterData();
+    const QAudioFormat &format() const;
 
     void stop();
 
@@ -46,7 +47,8 @@ private slots:
     void interpretInput();
 
 private:
-    QList<QPair<qreal, qreal> > parseChopperSignal(QList<unsigned int> signal, unsigned int avg, qreal phase);
+    void readSoudCard(QList<qreal> &leftList, QList<int> &rightList);
+    QList<QPair<qreal, qreal> > parseChopperSignal(QList<int> signal, qreal phase);
 
 
     // vaut 0 quand s'est arrêté
@@ -56,18 +58,18 @@ private:
      * Peuvent être changés quand sa tourne
      */
     qreal _phase;
+    qreal _vumeterTime;
+    int _sampleVumeter;
+    QMutex _vumeterMutex;
 
 
     /*
      * A ne pas toucher pandant que sa tourne
      */
-    int _sampleSize;
+    QAudioFormat _format;
 
-//    QBuffer *_bufferWrite;
-//    QBuffer *_bufferRead;
     QFifo *_fifo;
     QByteArray _byteArray;
-    QDataStream::ByteOrder _byteOrder;
 
     QList<QPair<qreal, qreal> > _dataXY;
     qreal _outputPeriod;
@@ -75,9 +77,6 @@ private:
     qreal _integrationTime;
     int _sampleIntegration;
 
-    qreal _vumeterTime;
-    int _sampleVumeter;
-    QMutex _vumeterMutex;
     QList<QPair<qreal, qreal> > _vumeterData; // <left, sin>
 
     qreal _timeValue;

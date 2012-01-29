@@ -36,15 +36,28 @@
       <item row="1" column="0">
        <widget class="QLabel" name="outputFrequencyHzLabel">
         <property name="text">
-         <string>Output frequency [Hz]</string>
+         <string>Output frequency</string>
         </property>
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QDoubleSpinBox" name="outputFrequency"/>
+       <widget class="QDoubleSpinBox" name="outputFrequency">
+        <property name="suffix">
+         <string> [Hz]</string>
+        </property>
+        <property name="maximum">
+         <double>20.000000000000000</double>
+        </property>
+       </widget>
       </item>
       <item row="2" column="1">
        <widget class="QDoubleSpinBox" name="integrationTime">
+        <property name="suffix">
+         <string> [s]</string>
+        </property>
+        <property name="maximum">
+         <double>100.000000000000000</double>
+        </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
         </property>
@@ -53,7 +66,7 @@
       <item row="2" column="0">
        <widget class="QLabel" name="integrationTimeSLabel">
         <property name="text">
-         <string>Integration time [s]</string>
+         <string>Integration time</string>
         </property>
        </widget>
       </item>
@@ -99,6 +112,30 @@
        </item>
        <item>
         <widget class="XYGraph" name="pll"/>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <item>
+          <widget class="QSlider" name="vumeterTime">
+           <property name="maximum">
+            <number>100</number>
+           </property>
+           <property name="value">
+            <number>10</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="vumeterLabel">
+           <property name="text">
+            <string>10 ms</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>

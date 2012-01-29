@@ -24,7 +24,7 @@ private slots:
     void on_buttonStartStop_clicked();
     void getValues(qreal time, qreal x, qreal y);
     void on_buttonAutoPhase_clicked();
-
+    void on_vumeterTime_valueChanged(int timems);
 
 private:
     void startLockin();

@@ -7,11 +7,11 @@
 Lockin2::Lockin2(QObject *parent) :
     QObject(parent)
 {
-//    _bufferWrite = new QBuffer(&_byteArray, this);
-//    _bufferWrite->open(QIODevice::WriteOnly | QIODevice::Unbuffered);
+    //    _bufferWrite = new QBuffer(&_byteArray, this);
+    //    _bufferWrite->open(QIODevice::WriteOnly | QIODevice::Unbuffered);
 
-//    _bufferRead = new QBuffer(&_byteArray, this);
-//    _bufferRead->open(QIODevice::ReadOnly | QIODevice::Unbuffered);
+    //    _bufferRead = new QBuffer(&_byteArray, this);
+    //    _bufferRead->open(QIODevice::ReadOnly | QIODevice::Unbuffered);
     _fifo = new QFifo(this);
     _fifo->open(QIODevice::ReadWrite /*| QIODevice::Unbuffered*/);
 
@@ -44,10 +44,6 @@ bool Lockin2::isFormatSupported(const QAudioFormat &format)
         return false;
     }
 
-    if (format.sampleType() != QAudioFormat::UnSignedInt) {
-        return false;
-    }
-
     return true;
 }
 
@@ -73,10 +69,6 @@ bool Lockin2::start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &for
         _audioInput->setNotifyInterval(_outputPeriod * 1000.0);
         connect(_audioInput, SIGNAL(notify()), this, SLOT(interpretInput()));
 
-        _byteOrder = (QDataStream::ByteOrder)format.byteOrder();
-
-        _sampleSize = format.sampleSize();
-
         // pour être au millieu avec le temps
         _timeValue = -(_integrationTime / 2.0);
 
@@ -84,11 +76,13 @@ bool Lockin2::start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &for
         _sampleIntegration = format.sampleRate() * _integrationTime;
 
         // nombre d'échantillons pour un affichage de vumeter
-        _sampleVumeter = format.sampleRate() * _vumeterTime;
+        _sampleVumeter = _vumeterTime * format.sampleRate();
 
         // nettoyage des variables
         _fifo->readAll(); // vide le fifo
         _dataXY.clear(); // vide <x,y>
+
+        _format = format;
 
         _audioInput->start(_fifo);
     } else {
@@ -128,10 +122,10 @@ qreal Lockin2::integrationTime() const
 
 void Lockin2::setVumeterTime(qreal vumeterTime)
 {
-    if (_audioInput == 0)
-        _vumeterTime = vumeterTime;
-    else
-        qDebug() << __FUNCTION__ << ": lockin is running";
+    _vumeterMutex.lock();
+    _vumeterTime = vumeterTime;
+    _sampleVumeter = _vumeterTime * _format.sampleRate();
+    _vumeterMutex.unlock();
 }
 
 void Lockin2::setPhase(qreal phase)
@@ -160,6 +154,11 @@ QList<QPair<qreal, qreal> > Lockin2::vumeterData()
     QList<QPair<qreal, qreal> > ret = _vumeterData;
     _vumeterMutex.unlock();
     return ret;
+}
+
+const QAudioFormat &Lockin2::format() const
+{
+    return _format;
 }
 
 void Lockin2::stop()
@@ -193,75 +192,21 @@ void Lockin2::interpretInput()
      * 1.0s 500Hz -> 0.4%
      */
 
-    qreal avg = 0;
-    switch (_sampleSize) {
-    case 8:
-        avg = 128;
-        break;
-    case 16:
-        avg = 32768;
-        break;
-    case 32:
-        avg = 2147483648;
-        break;
-    }
 
     QList<qreal> leftSignal;
-    QList<unsigned int> chopperSignal;
+    QList<int> chopperSignal;
 
-    int newSamplesCount = 0;
+    // les des données et les adapte
+    // left [-1;+1]
+    // right -1 ou +1
+    readSoudCard(leftSignal, chopperSignal);
 
-    QDataStream in(_fifo);
-    in.setByteOrder(_byteOrder);
-
-    while (!in.atEnd()) {
-        qreal left;
-        unsigned int right;
-
-        if (_sampleSize == 8) {
-            quint8 i;
-
-            in >> i;
-            left = qreal(i);
-
-            in >> i;
-            right = i;
-        } else if (_sampleSize == 16) {
-            quint16 i;
-
-            in >> i;
-            left = qreal(i);
-
-            in >> i;
-            right = i;
-        } else if (_sampleSize == 32) {
-            quint32 i;
-
-            in >> i;
-            left = qreal(i);
-
-            in >> i;
-            right = i;
-        } else {
-            left = right = 0;
-            qDebug() << __FUNCTION__ << ": sampleSize not valid";
-        }
-
-        leftSignal << left / avg;
-        chopperSignal << right;
-
-        newSamplesCount++;
-    }
-
-    if (newSamplesCount == 0) {
-        qDebug() << __FUNCTION__ << ": nothing new...";
+    if (leftSignal.size() == 0 || chopperSignal.size() == 0)
         return;
-    }
 
+    QList<QPair<qreal, qreal> > chopperSinCos = parseChopperSignal(chopperSignal, _phase);
 
-    QList<QPair<qreal, qreal> > chopperSinCos = parseChopperSignal(chopperSignal, avg, _phase);
-
-    // multiplie le leftSignal ([0;2]) par chopperSinCos ([-1;1])
+    // multiplie le leftSignal ([-1;1]) par chopperSinCos ([-1;1])
     for (int i = 0; i < leftSignal.size(); ++i) {
         qreal x, y;
         if (chopperSinCos[i].first != 3.0) { // 3.0 est la valeur qui indique ignoreValue dans parseChopperSignal(...)
@@ -330,9 +275,121 @@ void Lockin2::interpretInput()
     _yValue = y;
 
     emit newValues(_timeValue, x, y);
+
+    qDebug() << __FUNCTION__ << ": execution time " << time.elapsed() << "ms";
 }
 
-QList<QPair<qreal, qreal> > Lockin2::parseChopperSignal(QList<unsigned int> signal, unsigned int avg, qreal phase)
+void Lockin2::readSoudCard(QList<qreal> &leftList, QList<int> &rightList)
+{
+    qreal middle = 0;
+
+    switch (_format.sampleSize()) {
+    case 8:
+        middle = 128;
+        break;
+    case 16:
+        middle = 32768;
+        break;
+    case 32:
+        middle = 2147483648;
+        break;
+    }
+
+    QDataStream in(_fifo);
+    in.setByteOrder(QDataStream::ByteOrder(_format.byteOrder()));
+
+    int count = 0;
+
+    float _float;
+    qint8 _int8;
+    qint16 _int16;
+    qint32 _int32;
+    quint8 _uint8;
+    quint16 _uint16;
+    quint32 _uint32;
+
+    switch (_format.sampleType()) {
+    case QAudioFormat::Float:
+        while (!in.atEnd()) {
+            in >> _float;
+            leftList << _float;
+            in >> _float;
+            rightList << ((_float < 0) ? -1 : 1);
+            count++;
+        }
+        break;
+    case QAudioFormat::SignedInt:
+        switch (_format.sampleSize()) {
+        case 8:
+            while (!in.atEnd()) {
+                in >> _int8;
+                leftList << qreal(_int8) / middle;
+                in >> _int8;
+                rightList << ((_int8 < 0) ? -1 : 1);
+                count++;
+            }
+            break;
+        case 16:
+            while (!in.atEnd()) {
+                in >> _int16;
+                leftList << qreal(_int16) / middle;
+                in >> _int16;
+                rightList << ((_int16 < 0) ? -1 : 1);
+                count++;
+            }
+            break;
+        case 32:
+            while (!in.atEnd()) {
+                in >> _int32;
+                leftList << qreal(_int32) / middle;
+                in >> _int32;
+                rightList << ((_int32 < 0) ? -1 : 1);
+                count++;
+            }
+            break;
+        }
+        break;
+    case QAudioFormat::UnSignedInt:
+        switch (_format.sampleSize()) {
+        case 8:
+            while (!in.atEnd()) {
+                in >> _uint8;
+                leftList << (qreal(_uint8) / middle) - 1.0;
+                in >> _uint8;
+                rightList << ((_uint8 < middle) ? -1 : 1);
+                count++;
+            }
+            break;
+        case 16:
+            while (!in.atEnd()) {
+                in >> _uint16;
+                leftList << (qreal(_uint16) / middle) - 1.0;
+                in >> _uint16;
+                rightList << ((_uint16 < middle) ? -1 : 1);
+                count++;
+            }
+            break;
+        case 32:
+            while (!in.atEnd()) {
+                in >> _uint32;
+                leftList << (qreal(_uint32) / middle) - 1.0;
+                in >> _uint32;
+                rightList << ((_uint32 < middle) ? -1 : 1);
+                count++;
+            }
+            break;
+        }
+        break;
+    case QAudioFormat::Unknown:
+        break;
+    }
+
+    if (count == 0) {
+        qDebug() << __FUNCTION__ << ": cannot read data";
+    }
+}
+
+QList<QPair<qreal, qreal> > Lockin2::parseChopperSignal(QList<int> signal, qreal phase)
 {
     // transforme le signal en sin et cos déphasé
     // dans les bords, la valeur 3.0 indique d'on ignore l'element
@@ -340,11 +397,11 @@ QList<QPair<qreal, qreal> > Lockin2::parseChopperSignal(QList<unsigned int> sign
     QList<QPair<qreal, qreal> > out;
 
     bool ignore = true;
-    bool wasBiggerThanAvg = (signal.first() > avg);
+    bool wasBiggerThanAvg = (signal.first() == 1);
     int periodSize = 0;
 
     for (int i = 0; i < signal.size(); ++i) {
-        bool isBiggerThanAvg = (signal[i] > avg);
+        bool isBiggerThanAvg = (signal[i] == 1);
 
         periodSize += 1;
 
