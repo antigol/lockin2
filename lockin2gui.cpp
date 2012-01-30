@@ -45,7 +45,7 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
 
     _vumeter = new XYScene(this);
     _vumeter->setBackgroundBrush(QBrush(Qt::black));
-    _vumeter->setZoom(0, 100, -1, 1);
+    _vumeter->setZoom(0, 100, -1.1, 1.1);
     ui->vumeter->setScene(_vumeter);
 
     _vuScatterPlot = new XYScatterplot(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::green), 1.5));
@@ -54,7 +54,7 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
 
     _pll = new XYScene(this);
     _pll->setBackgroundBrush(QBrush(Qt::black));
-    _pll->setZoom(0, 100, -1, 1);
+    _pll->setZoom(0, 100, -1.1, 1.1);
     ui->pll->setScene(_pll);
 
     _pllScatterPlot = new XYScatterplot(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::green), 1.5));
@@ -232,6 +232,17 @@ void Lockin2Gui::startLockin()
 
         ui->frame->setEnabled(false);
         ui->buttonStartStop->setText("Stop !");
+
+        QString str = QString::fromUtf8("phase = %1°\n"
+                                        "sample rate = %2 Hz\n"
+                                        "sample size = %3 bits");
+
+        str = str.arg(_lockin->phase());
+        str = str.arg(_lockin->format().sampleRate());
+        str = str.arg(_lockin->format().sampleSize());
+
+        ui->info->setText(str);
+
     } else {
         qDebug() << __FUNCTION__ << ": cannot start lockin";
         QMessageBox::warning(this, "Start lockin fail", "Start has failed, maybe retry can work.");
@@ -243,6 +254,7 @@ void Lockin2Gui::stopLockin()
     _lockin->stop();
     ui->frame->setEnabled(true);
     ui->buttonStartStop->setText("Start");
+    ui->info->setText("lockin stoped");
 }
 
 void Lockin2Gui::on_vumeterTime_valueChanged(int timems)

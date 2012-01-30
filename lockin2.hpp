@@ -45,6 +45,7 @@ signals:
 
 private slots:
     void interpretInput();
+    void audioStateChanged(QAudio::State state);
 
 private:
     void readSoudCard(QList<qreal> &leftList, QList<int> &rightList);

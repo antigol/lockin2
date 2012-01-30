@@ -67,7 +67,9 @@ bool Lockin2::start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &for
     if (audioDevice.isFormatSupported(format)) {
         _audioInput = new QAudioInput(audioDevice, format, this);
         _audioInput->setNotifyInterval(_outputPeriod * 1000.0);
+
         connect(_audioInput, SIGNAL(notify()), this, SLOT(interpretInput()));
+        connect(_audioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioStateChanged(QAudio::State)));
 
         // pour être au millieu avec le temps
         _timeValue = -(_integrationTime / 2.0);
@@ -279,6 +281,24 @@ void Lockin2::interpretInput()
     qDebug() << __FUNCTION__ << ": execution time " << time.elapsed() << "ms";
 }
 
+void Lockin2::audioStateChanged(QAudio::State state)
+{
+    switch (state) {
+    case QAudio::ActiveState:
+        qDebug() << __FUNCTION__ << ": ActiveState";
+        break;
+    case QAudio::SuspendedState:
+        qDebug() << __FUNCTION__ << ": SuspendedState";
+        break;
+    case QAudio::StoppedState:
+        qDebug() << __FUNCTION__ << ": StoppedState";
+        break;
+    case QAudio::IdleState:
+        qDebug() << __FUNCTION__ << ": IdleState";
+        break;
+    }
+}
+
 void Lockin2::readSoudCard(QList<qreal> &leftList, QList<int> &rightList)
 {
     qreal middle = 0;
@@ -385,7 +405,7 @@ void Lockin2::readSoudCard(QList<qreal> &leftList, QList<int> &rightList)
     }
 
     if (count == 0) {
-        qDebug() << __FUNCTION__ << ": cannot read data";
+        qDebug() << __FUNCTION__ << ": cannot read data (in.atEnd = " << in.atEnd() << ")";
     }
 }
 
