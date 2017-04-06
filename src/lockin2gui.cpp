@@ -24,7 +24,7 @@
 #include "lockin2gui.hpp"
 #include "ui_lockingui.h"
 #include "audioutils.hpp"
-#include <xygraph/xyscene.hpp>
+#include "xy/xyscene.hh"
 #include <QDebug>
 #include <QTime>
 #include <QSettings>
@@ -40,21 +40,21 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
     _lockin = new Lockin2(this);
 
     foreach (const QAudioDeviceInfo &deviceInfo, QAudioDeviceInfo::availableDevices(QAudio::AudioInput)) {
-//        QAudioFormat format = foundFormat(deviceInfo);
+        //        QAudioFormat format = foundFormat(deviceInfo);
 
-//        if (deviceInfo.isFormatSupported(format) && _lockin->isFormatSupported(format)) {
-            ui->audioDeviceSelector->addItem(deviceInfo.deviceName(), qVariantFromValue(deviceInfo));
-//            qDebug() << deviceInfo.deviceName() << " added in the list";
-//        } else {
-//            qDebug() << deviceInfo.deviceName() << " is not supported :";
-//            qDebug() << "deviceInfo =";
-//            showQAudioDeviceInfo(deviceInfo);
-//            format = deviceInfo.preferredFormat();
-//            qDebug() << "format = deviceInfo.preferredFormat(); format =";
-//            showQAudioFormat(format);
-//            qDebug() << "deviceInfo.isFormatSupported(format) = " << deviceInfo.isFormatSupported(format);
-//            qDebug() << " ";
-//        }
+        //        if (deviceInfo.isFormatSupported(format) && _lockin->isFormatSupported(format)) {
+        ui->audioDeviceSelector->addItem(deviceInfo.deviceName(), qVariantFromValue(deviceInfo));
+        //            qDebug() << deviceInfo.deviceName() << " added in the list";
+        //        } else {
+        //            qDebug() << deviceInfo.deviceName() << " is not supported :";
+        //            qDebug() << "deviceInfo =";
+        //            showQAudioDeviceInfo(deviceInfo);
+        //            format = deviceInfo.preferredFormat();
+        //            qDebug() << "format = deviceInfo.preferredFormat(); format =";
+        //            showQAudioFormat(format);
+        //            qDebug() << "deviceInfo.isFormatSupported(format) = " << deviceInfo.isFormatSupported(format);
+        //            qDebug() << " ";
+        //        }
     }
 
     QSettings set;
@@ -71,7 +71,7 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
     _vumeter->setZoom(0, 100, -1.1, 1.1);
     ui->vumeter->setScene(_vumeter);
 
-    _vuScatterPlot = new XYScatterplot(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::green), 1.5));
+    _vuScatterPlot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::green), 1.5));
     _vumeter->addScatterplot(_vuScatterPlot);
 
 
@@ -80,7 +80,7 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
     _pll->setZoom(0, 100, -1.1, 1.1);
     ui->pll->setScene(_pll);
 
-    _pllScatterPlot = new XYScatterplot(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::green), 1.5));
+    _pllScatterPlot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::green), 1.5));
     _pll->addScatterplot(_pllScatterPlot);
 
 
@@ -89,11 +89,10 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
     _output->setZoom(0.0, 15.0, -1.0, 1.0);
     ui->output->setScene(_output);
 
-    _xScatterPlot = new XYScatterplot(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::red), 1.5));
+    _xScatterPlot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::red), 1.5));
     _output->addScatterplot(_xScatterPlot);
-    _yScatterPlot = new XYScatterplot(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::darkGray), 1.5));
+    _yScatterPlot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::darkGray), 1.5));
     _output->addScatterplot(_yScatterPlot);
-
 }
 
 Lockin2Gui::~Lockin2Gui()
@@ -104,22 +103,15 @@ Lockin2Gui::~Lockin2Gui()
     set.setValue("phase", _lockin->phase());
     set.setValue("vumeterTime", ui->vumeterTime->value());
 
-    qDebug() << __FUNCTION__ << ":" << __LINE__;
     delete _vumeter;
-    qDebug() << __FUNCTION__ << ":" << __LINE__;
     delete _pll;
-    qDebug() << __FUNCTION__ << ":" << __LINE__;
     delete _output;
-    qDebug() << __FUNCTION__ << ":" << __LINE__;
 
     delete _vuScatterPlot;
-    qDebug() << __FUNCTION__ << ":" << __LINE__;
     delete _pllScatterPlot;
-    qDebug() << __FUNCTION__ << ":" << __LINE__;
     delete _xScatterPlot;
-    qDebug() << __FUNCTION__ << ":" << __LINE__;
     delete _yScatterPlot;
-    qDebug() << __FUNCTION__ << ":" << __LINE__;
+//    qDebug() << __FUNCTION__ << ":" << __LINE__;
 
     delete ui;
 }

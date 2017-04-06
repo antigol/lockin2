@@ -23,8 +23,6 @@
 #ifndef LOCKIN2_HPP
 #define LOCKIN2_HPP
 
-#include "lockin2_global.hpp"
-
 #include <QObject>
 #include <QAudioInput>
 #include <QAudioFormat>
@@ -35,7 +33,7 @@
 
 class QFifo;
 
-class LOCKIN2SHARED_EXPORT Lockin2 : public QObject {
+class Lockin2 : public QObject {
     Q_OBJECT
 public:
     explicit Lockin2(QObject *parent = 0);
@@ -44,7 +42,7 @@ public:
     bool isRunning() const;
     bool isFormatSupported(const QAudioFormat &format);
 
-    // peu être appelé quand sa tourne pas:
+    // peu être appelé quand sa ne tourne pas:
     bool start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &format);
     void setOutputPeriod(qreal outputPeriod);
     qreal outputPeriod() const;
@@ -74,7 +72,7 @@ private:
     QList<QPair<qreal, qreal> > parseChopperSignal(QList<int> signal, qreal phase);
 
 
-    // vaut 0 quand s'est arrêté
+    // vaut 0 quand c'est arrêté
     QAudioInput *_audioInput;
 
     /*

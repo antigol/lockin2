@@ -1,13 +1,4 @@
-lockin simplifié qui utilise QAudioInput du module multimedia de Qt.
+# lockin
 
-dépendant de xygraph : https://github.com/antigol/xygraph
+Using QAudioInput from Qt multimedia
 
-pour compiler:
-
-* Il faut compiler xygraph (qmake, make)
-  Sur linux : l'installer (dans /usr/local/lib et /usr/local/include) avec la commande make install
-  Sur windows : il faudra copier le fichier dll dans le dossier de compilation de lockin2
-  Sur windows : il faut également que le dossier de sources de xygraph se nome "xygraph" et soit placé dans le même dossier que les sources de lockin2
-
-* Compiler lockin2 (qmake, make)
-  Sur linux : s'il ne trouve pas les fichier des librairie à l'execution lancer la commande ldconfig peut résoudre le problème

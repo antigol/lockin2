@@ -23,25 +23,24 @@
 #ifndef LOCKINGUI_HPP
 #define LOCKINGUI_HPP
 
-#include "lockin2_global.hpp"
 #include "lockin2.hpp"
 
 #include <QWidget>
-#include <xygraph/xygraph.hpp>
-#include <xygraph/xyscene.hpp>
+#include "xy/xyscene.hh"
+#include "xy/xyview.hh"
 
 namespace Ui {
 class LockinGui;
 }
 
-class LOCKIN2SHARED_EXPORT Lockin2Gui : public QWidget
+class Lockin2Gui : public QWidget
 {
     Q_OBJECT
-    
+
 public:
     explicit Lockin2Gui(QWidget *parent = 0);
     ~Lockin2Gui();
-        
+
 private slots:
     void on_buttonStartStop_clicked();
     void getValues(qreal time, qreal x, qreal y);
@@ -57,14 +56,14 @@ private:
     Lockin2 *_lockin;
 
     XYScene *_vumeter;
-    XYScatterplot *_vuScatterPlot;
+    XYPointList *_vuScatterPlot;
 
     XYScene *_pll;
-    XYScatterplot *_pllScatterPlot;
+    XYPointList *_pllScatterPlot;
 
     XYScene *_output;
-    XYScatterplot *_xScatterPlot;
-    XYScatterplot *_yScatterPlot;
+    XYPointList *_xScatterPlot;
+    XYPointList *_yScatterPlot;
 };
 
 #endif // LOCKINGUI_HPP

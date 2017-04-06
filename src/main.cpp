@@ -1,10 +1,6 @@
 #include <QApplication>
 
-#if defined(LOCKIN2_LIBRARY)
-#  include "lockin2gui.hpp"
-#else
-#  include <lockin2/lockin2gui.hpp>
-#endif
+#include "lockin2gui.hpp"
 
 int main(int argc, char *argv[])
 {
