@@ -43,6 +43,7 @@ public:
 
 private slots:
     void on_buttonStartStop_clicked();
+    void updateGraphs();
     void getValues(qreal time, qreal x, qreal y);
     void on_buttonAutoPhase_clicked();
     void on_vumeterTime_valueChanged(int timems);
@@ -50,7 +51,7 @@ private slots:
 private:
     void startLockin();
     void stopLockin();
-    QAudioFormat foundFormat(QAudioDeviceInfo &device);
+    QAudioFormat foundFormat(const QAudioDeviceInfo &device);
 
     Ui::LockinGui *ui;
     Lockin2 *_lockin;

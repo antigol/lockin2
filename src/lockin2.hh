@@ -60,6 +60,7 @@ public:
     void stop();
 
 signals:
+    void newVumeterData();
     void newValues(qreal time, qreal x, qreal y);
     void info(QString msg);
 

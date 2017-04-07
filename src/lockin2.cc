@@ -248,6 +248,7 @@ void Lockin2::interpretInput()
             }
         }
         _vumeterMutex.unlock();
+        emit newVumeterData();
     } else {
         qDebug() << __FUNCTION__ << ": the view Mutex is locked";
     }
@@ -294,7 +295,7 @@ void Lockin2::interpretInput()
 
     emit newValues(_timeValue, x, y);
 
-    qDebug() << __FUNCTION__ << ": execution time " << time.elapsed() << "ms";
+//    qDebug() << __FUNCTION__ << ": execution time " << time.elapsed() << "ms";
 }
 
 void Lockin2::audioStateChanged(QAudio::State state)

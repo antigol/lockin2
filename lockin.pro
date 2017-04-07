@@ -2,11 +2,9 @@ QT += gui
 QT += widgets
 QT += multimedia
 
-LIBS += -lasound
-
 CONFIG += c++11
 
-TARGET = lockin2
+TARGET = lockin
 
 DEFINES += QT_DEPRECATED_WARNINGS
 
@@ -28,6 +26,3 @@ HEADERS += \
 
 FORMS += \
     src/lockingui.ui
-
-DISTFILES += \
-    alsa/alsa.pro.user
