@@ -23,9 +23,9 @@
 #ifndef LOCKINGUI_HPP
 #define LOCKINGUI_HPP
 
-#include "lockin2.hpp"
-
+#include <QAudioDeviceInfo>
 #include <QWidget>
+#include "lockin2.hh"
 #include "xy/xyscene.hh"
 #include "xy/xyview.hh"
 
@@ -50,7 +50,7 @@ private slots:
 private:
     void startLockin();
     void stopLockin();
-    QAudioFormat foundFormat(const QAudioDeviceInfo &device);
+    QAudioFormat foundFormat(QAudioDeviceInfo &device);
 
     Ui::LockinGui *ui;
     Lockin2 *_lockin;

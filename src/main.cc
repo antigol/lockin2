@@ -1,6 +1,5 @@
 #include <QApplication>
-
-#include "lockin2gui.hpp"
+#include "lockin2gui.hh"
 
 int main(int argc, char *argv[])
 {

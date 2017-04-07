@@ -20,7 +20,7 @@
 **
 ****************************************************************************/
 
-#include "audioutils.hpp"
+#include "audioutils.hh"
 #include <QDebug>
 
 void showQAudioFormat(const QAudioFormat &format)

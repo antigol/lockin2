@@ -20,8 +20,8 @@
 **
 ****************************************************************************/
 
-#include "lockin2.hpp"
-#include "qfifo.hpp"
+#include "lockin2.hh"
+#include "qfifo.hh"
 #include <cmath>
 #include <QDebug>
 #include <QTime>
@@ -86,34 +86,28 @@ bool Lockin2::start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &for
         return false;
     }
 
-    if (audioDevice.isFormatSupported(format)) {
-        _audioInput = new QAudioInput(audioDevice, format, this);
-        _audioInput->setNotifyInterval(_outputPeriod * 1000.0);
+    _audioInput = new QAudioInput(audioDevice, format, this);
+    _audioInput->setNotifyInterval(_outputPeriod * 1000.0);
 
-        connect(_audioInput, SIGNAL(notify()), this, SLOT(interpretInput()));
-        connect(_audioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioStateChanged(QAudio::State)));
+    connect(_audioInput, SIGNAL(notify()), this, SLOT(interpretInput()));
+    connect(_audioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioStateChanged(QAudio::State)));
 
-        // pour être au millieu avec le temps
-        _timeValue = -(_integrationTime / 2.0);
+    // pour être au millieu avec le temps
+    _timeValue = -(_integrationTime / 2.0);
 
-        // nombre d'échantillons pour le temps d'integration
-        _sampleIntegration = format.sampleRate() * _integrationTime;
+    // nombre d'échantillons pour le temps d'integration
+    _sampleIntegration = format.sampleRate() * _integrationTime;
 
-        // nombre d'échantillons pour un affichage de vumeter
-        _sampleVumeter = _vumeterTime * format.sampleRate();
+    // nombre d'échantillons pour un affichage de vumeter
+    _sampleVumeter = _vumeterTime * format.sampleRate();
 
-        // nettoyage des variables
-        _fifo->readAll(); // vide le fifo
-        _dataXY.clear(); // vide <x,y>
+    // nettoyage des variables
+    _fifo->readAll(); // vide le fifo
+    _dataXY.clear(); // vide <x,y>
 
-        _format = format;
+    _format = format;
 
-        _audioInput->start(_fifo);
-    } else {
-        qDebug() << __FUNCTION__ << ": format not supported, can't start";
-        return false;
-    }
-
+    _audioInput->start(_fifo);
 
     return true;
 }

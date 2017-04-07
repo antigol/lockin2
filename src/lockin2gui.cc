@@ -21,9 +21,9 @@
 ****************************************************************************/
 
 
-#include "lockin2gui.hpp"
+#include "lockin2gui.hh"
 #include "ui_lockingui.h"
-#include "audioutils.hpp"
+#include "audioutils.hh"
 #include "xy/xyscene.hh"
 #include <QDebug>
 #include <QTime>
@@ -192,7 +192,7 @@ T maxInList(const QList<T> &list, T def)
     return max;
 }
 
-QAudioFormat Lockin2Gui::foundFormat(const QAudioDeviceInfo &device)
+QAudioFormat Lockin2Gui::foundFormat(QAudioDeviceInfo &device)
 {
     QAudioFormat format = device.preferredFormat();
     format.setChannelCount(2);

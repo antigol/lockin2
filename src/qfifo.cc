@@ -1,4 +1,4 @@
-#include "qfifo.hpp"
+#include "qfifo.hh"
 
 QFifo::QFifo(QObject *parent) :
     QIODevice(parent)

@@ -23,9 +23,9 @@
 #ifndef LOCKIN2_HPP
 #define LOCKIN2_HPP
 
-#include <QObject>
 #include <QAudioInput>
 #include <QAudioFormat>
+#include <QObject>
 #include <QBuffer>
 #include <QDataStream>
 #include <QPair>
