@@ -115,10 +115,8 @@ bool Lockin::start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &form
 
 void Lockin::setOutputPeriod(qreal outputPeriod)
 {
-    if (_audioInput == 0)
-        _outputPeriod = outputPeriod;
-    else
-        qDebug() << __FUNCTION__ << ": lockin is running";
+    Q_ASSERT(_audioInput == 0);
+    _outputPeriod = outputPeriod;
 }
 
 qreal Lockin::outputPeriod() const
@@ -128,10 +126,8 @@ qreal Lockin::outputPeriod() const
 
 void Lockin::setIntegrationTime(qreal integrationTime)
 {
-    if (_audioInput == 0)
-        _integrationTime = integrationTime;
-    else
-        qDebug() << __FUNCTION__ << ": lockin is running";
+    Q_ASSERT(_audioInput == 0);
+    _integrationTime = integrationTime;
 }
 
 qreal Lockin::integrationTime() const
@@ -157,12 +153,8 @@ qreal Lockin::phase() const
 
 qreal Lockin::autoPhase() const
 {
-    if (_audioInput != 0) {
-        return (_phase + std::atan2(_yValue, _xValue)) * 180.0/M_PI;
-    } else {
-        qDebug() << __FUNCTION__ << ": lockin is not running";
-        return 0.0;
-    }
+    Q_ASSERT(_audioInput != 0);
+    return (_phase + std::atan2(_yValue, _xValue)) * 180.0/M_PI;
 }
 
 QList<QPair<qreal, qreal>> &Lockin::vumeterData()
@@ -253,7 +245,7 @@ void Lockin::interpretInput()
     }
 
     if (n == 0.0) {
-        qDebug() << __FUNCTION__ << ": no data usable";
+        qDebug() << __FUNCTION__ << ": not enough data";
         emit info("signal too low");
         return;
     }

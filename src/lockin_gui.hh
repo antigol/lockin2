@@ -56,15 +56,15 @@ private:
     Ui::LockinGui *ui;
     Lockin *_lockin;
 
-    XYScene *_vumeter;
-    XYPointList *_vuScatterPlot;
+    XYScene *_vumeter_left;
+    XYPointList *_vumeter_left_plot;
 
-    XYScene *_pll;
-    XYPointList *_pllScatterPlot;
+    XYScene *_vumeter_right;
+    XYPointList *_vumeter_right_plot;
 
     XYScene *_output;
-    XYPointList *_xScatterPlot;
-    XYPointList *_yScatterPlot;
+    XYPointList *_x_plot;
+    XYPointList *_y_plot;
 };
 
 #endif // LOCKINGUI_HPP

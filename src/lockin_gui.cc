@@ -65,22 +65,22 @@ LockinGui::LockinGui(QWidget *parent) :
     connect(_lockin, SIGNAL(newVumeterData()), this, SLOT(updateGraphs()));
     connect(_lockin, SIGNAL(newValues(qreal,qreal,qreal)), this, SLOT(getValues(qreal,qreal,qreal)));
 
-    _vumeter = new XYScene(this);
-    _vumeter->setBackgroundBrush(QBrush(Qt::black));
-    _vumeter->setZoom(0, 100, -1.1, 1.1);
-    ui->vumeter->setScene(_vumeter);
+    _vumeter_left = new XYScene(this);
+    _vumeter_left->setBackgroundBrush(QBrush(Qt::black));
+    _vumeter_left->setZoom(0, 100, -1.1, 1.1);
+    ui->vumeter->setScene(_vumeter_left);
 
-    _vuScatterPlot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::green), 1.5));
-    _vumeter->addScatterplot(_vuScatterPlot);
+    _vumeter_left_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::green), 1.5));
+    _vumeter_left->addScatterplot(_vumeter_left_plot);
 
 
-    _pll = new XYScene(this);
-    _pll->setBackgroundBrush(QBrush(Qt::black));
-    _pll->setZoom(0, 100, -1.1, 1.1);
-    ui->pll->setScene(_pll);
+    _vumeter_right = new XYScene(this);
+    _vumeter_right->setBackgroundBrush(QBrush(Qt::black));
+    _vumeter_right->setZoom(0, 100, -1.1, 1.1);
+    ui->pll->setScene(_vumeter_right);
 
-    _pllScatterPlot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::green), 1.5));
-    _pll->addScatterplot(_pllScatterPlot);
+    _vumeter_right_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::green), 1.5));
+    _vumeter_right->addScatterplot(_vumeter_right_plot);
 
 
     _output = new XYScene(this);
@@ -88,10 +88,10 @@ LockinGui::LockinGui(QWidget *parent) :
     _output->setZoom(0.0, 15.0, -1.0, 1.0);
     ui->output->setScene(_output);
 
-    _xScatterPlot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::red), 1.5));
-    _output->addScatterplot(_xScatterPlot);
-    _yScatterPlot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::darkGray), 1.5));
-    _output->addScatterplot(_yScatterPlot);
+    _x_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::red), 1.5));
+    _output->addScatterplot(_x_plot);
+    _y_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::darkGray), 1.5));
+    _output->addScatterplot(_y_plot);
 }
 
 LockinGui::~LockinGui()
@@ -102,14 +102,14 @@ LockinGui::~LockinGui()
     set.setValue("phase", _lockin->phase());
     set.setValue("vumeterTime", ui->vumeterTime->value());
 
-    delete _vumeter;
-    delete _pll;
+    delete _vumeter_left;
+    delete _vumeter_right;
     delete _output;
 
-    delete _vuScatterPlot;
-    delete _pllScatterPlot;
-    delete _xScatterPlot;
-    delete _yScatterPlot;
+    delete _vumeter_left_plot;
+    delete _vumeter_right_plot;
+    delete _x_plot;
+    delete _y_plot;
     //    qDebug() << __FUNCTION__ << ":" << __LINE__;
 
     delete ui;
@@ -127,25 +127,25 @@ void LockinGui::on_buttonStartStop_clicked()
 void LockinGui::updateGraphs()
 {
     // vumeter & pll graphs
-    QList<QPair<qreal, qreal> > data = _lockin->vumeterData();
-    _vuScatterPlot->clear();
-    _pllScatterPlot->clear();
+    const QList<QPair<qreal, qreal>> &data = _lockin->vumeterData();
+    _vumeter_left_plot->clear();
+    _vumeter_right_plot->clear();
     qreal msPerDot = 1000.0 / qreal(_lockin->format().sampleRate());
     for (int i = 0; i < data.size(); ++i) {
         qreal t = i*msPerDot;
-        _vuScatterPlot->append(QPointF(t, data[i].first));
-        _pllScatterPlot->append(QPointF(t, data[i].second));
+        _vumeter_left_plot->append(QPointF(t, data[i].first));
+        _vumeter_right_plot->append(QPointF(t, data[i].second));
     }
 
-    _vumeter->setXMin(0.0);
-    _vumeter->setXMax(msPerDot*data.size());
+    _vumeter_left->setXMin(0.0);
+    _vumeter_left->setXMax(msPerDot*data.size());
 
-    _vumeter->regraph();
+    _vumeter_left->regraph();
 
-    _pll->setXMin(0.0);
-    _pll->setXMax(msPerDot*data.size());
+    _vumeter_right->setXMin(0.0);
+    _vumeter_right->setXMax(msPerDot*data.size());
 
-    _pll->regraph();
+    _vumeter_right->regraph();
 }
 
 void LockinGui::getValues(qreal time, qreal x, qreal y)
@@ -173,11 +173,11 @@ void LockinGui::getValues(qreal time, qreal x, qreal y)
     std::cout << time << " " << x << std::endl;
 
     // output graph
-    _xScatterPlot->append(QPointF(time, x));
-    _yScatterPlot->append(QPointF(time, y));
+    _x_plot->append(QPointF(time, x));
+    _y_plot->append(QPointF(time, y));
     RealZoom zoom = _output->zoom();
     if (zoom.xMin() < time && zoom.xMax() < time && zoom.xMax() > time * 0.9)
-        zoom.setXMax(time * 1.20);
+        zoom.setXMax(time + 0.20 * zoom.width());
     _output->setZoom(zoom);
 
     _output->regraph();
@@ -234,10 +234,10 @@ void LockinGui::startLockin()
     _lockin->setIntegrationTime(ui->integrationTime->value());
 
     if (_lockin->start(deviceInfo, format)) {
-        _xScatterPlot->clear();
-        _yScatterPlot->clear();
-        _vuScatterPlot->clear();
-        _pllScatterPlot->clear();
+        _x_plot->clear();
+        _y_plot->clear();
+        _vumeter_left_plot->clear();
+        _vumeter_right_plot->clear();
 
         ui->frame->setEnabled(false);
         ui->buttonStartStop->setText("Stop !");
@@ -252,9 +252,11 @@ void LockinGui::startLockin()
 
         ui->info->setText(str);
 
+        ui->buttonAutoPhase->setEnabled(true);
+
     } else {
         qDebug() << __FUNCTION__ << ": cannot start lockin";
-        QMessageBox::warning(this, "Start lockin fail", "Start has failed, maybe retry can work.");
+        QMessageBox::warning(this, "Start lockin fail", "Start has failed.");
     }
 }
 
@@ -264,6 +266,7 @@ void LockinGui::stopLockin()
     ui->frame->setEnabled(true);
     ui->buttonStartStop->setText("Start");
     ui->info->setText("lockin stoped");
+    ui->buttonAutoPhase->setEnabled(false);
 }
 
 void LockinGui::on_vumeterTime_valueChanged(int time_ms)

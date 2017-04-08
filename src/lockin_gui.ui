@@ -164,6 +164,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <widget class="QPushButton" name="buttonAutoPhase">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>Auto phase</string>
        </property>
@@ -192,7 +195,7 @@
       </font>
      </property>
      <property name="text">
-      <string>welcome</string>
+      <string>no status</string>
      </property>
     </widget>
    </item>
