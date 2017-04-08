@@ -20,51 +20,26 @@
 **
 ****************************************************************************/
 
-#ifndef LOCKINGUI_HPP
-#define LOCKINGUI_HPP
+#ifndef FIFO_HPP
+#define FIFO_HPP
 
-#include <QAudioDeviceInfo>
-#include <QWidget>
-#include "lockin2.hh"
-#include "xy/xyscene.hh"
-#include "xy/xyview.hh"
+#include <QIODevice>
+#include <QByteArray>
 
-namespace Ui {
-class LockinGui;
-}
-
-class Lockin2Gui : public QWidget
+class Fifo : public QIODevice
 {
     Q_OBJECT
-
 public:
-    explicit Lockin2Gui(QWidget *parent = 0);
-    ~Lockin2Gui();
-
-private slots:
-    void on_buttonStartStop_clicked();
-    void updateGraphs();
-    void getValues(qreal time, qreal x, qreal y);
-    void on_buttonAutoPhase_clicked();
-    void on_vumeterTime_valueChanged(int timems);
+    explicit Fifo(QObject *parent = 0);
+    
+    bool atEnd() const;
+    qint64 bytesAvailable() const;
 
 private:
-    void startLockin();
-    void stopLockin();
-    QAudioFormat foundFormat(const QAudioDeviceInfo &device);
+    qint64 readData(char *data, qint64 len);
+    qint64 writeData(const char *data, qint64 len);
 
-    Ui::LockinGui *ui;
-    Lockin2 *_lockin;
-
-    XYScene *_vumeter;
-    XYPointList *_vuScatterPlot;
-
-    XYScene *_pll;
-    XYPointList *_pllScatterPlot;
-
-    XYScene *_output;
-    XYPointList *_xScatterPlot;
-    XYPointList *_yScatterPlot;
+    QByteArray _data;
 };
 
-#endif // LOCKINGUI_HPP
+#endif // FIFO_HPP

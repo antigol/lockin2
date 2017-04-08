@@ -21,8 +21,8 @@
 ****************************************************************************/
 
 
-#include "lockin2gui.hh"
-#include "ui_lockingui.h"
+#include "lockin_gui.hh"
+#include "ui_lockin_gui.h"
 #include "audioutils.hh"
 #include "xy/xyscene.hh"
 #include <QDebug>
@@ -31,22 +31,20 @@
 #include <QMessageBox>
 #include <iostream>
 
-Lockin2Gui::Lockin2Gui(QWidget *parent) :
+LockinGui::LockinGui(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::LockinGui)
 {
     ui->setupUi(this);
 
-    _lockin = new Lockin2(this);
+    _lockin = new Lockin(this);
 
     foreach (const QAudioDeviceInfo &deviceInfo, QAudioDeviceInfo::availableDevices(QAudio::AudioInput)) {
         QAudioFormat format = foundFormat(deviceInfo);
 
         if (deviceInfo.isFormatSupported(format) && _lockin->isFormatSupported(format)) {
             ui->audioDeviceSelector->addItem(deviceInfo.deviceName(), qVariantFromValue(deviceInfo));
-            qDebug() << deviceInfo.deviceName() << " supported";
         } else {
-            qDebug() << deviceInfo.deviceName() << " is not supported :";
 //            qDebug() << "deviceInfo =";
 //            showQAudioDeviceInfo(deviceInfo);
 //            format = deviceInfo.preferredFormat();
@@ -96,7 +94,7 @@ Lockin2Gui::Lockin2Gui(QWidget *parent) :
     _output->addScatterplot(_yScatterPlot);
 }
 
-Lockin2Gui::~Lockin2Gui()
+LockinGui::~LockinGui()
 {
     QSettings set;
     set.setValue("outputFrequency", ui->outputFrequency->value());
@@ -117,7 +115,7 @@ Lockin2Gui::~Lockin2Gui()
     delete ui;
 }
 
-void Lockin2Gui::on_buttonStartStop_clicked()
+void LockinGui::on_buttonStartStop_clicked()
 {
     if (_lockin->isRunning()) {
         stopLockin();
@@ -126,7 +124,7 @@ void Lockin2Gui::on_buttonStartStop_clicked()
     }
 }
 
-void Lockin2Gui::updateGraphs()
+void LockinGui::updateGraphs()
 {
     // vumeter & pll graphs
     QList<QPair<qreal, qreal> > data = _lockin->vumeterData();
@@ -150,7 +148,7 @@ void Lockin2Gui::updateGraphs()
     _pll->regraph();
 }
 
-void Lockin2Gui::getValues(qreal time, qreal x, qreal y)
+void LockinGui::getValues(qreal time, qreal x, qreal y)
 {
     QTime execTime;
     execTime.start();
@@ -196,39 +194,31 @@ T maxInList(const QList<T> &list, T def)
     return max;
 }
 
-QAudioFormat Lockin2Gui::foundFormat(const QAudioDeviceInfo &device)
+QAudioFormat LockinGui::foundFormat(const QAudioDeviceInfo &device)
 {
     QAudioFormat format = device.preferredFormat();
     format.setChannelCount(2);
     format.setCodec("audio/pcm");
 
-    format.setSampleRate(maxInList(device.supportedSampleRates(), 44100));
-    format.setSampleSize(32);
-
+    format.setSampleSize(maxInList(device.supportedSampleSizes(), format.sampleSize()));
 
     if (!device.isFormatSupported(format)) {
         format = device.nearestFormat(format);
 
-        // ces réglages sont indispensables pour le lockin
+        // Required values
         format.setChannelCount(2);
         format.setCodec("audio/pcm");
-    }
-
-    if (!device.isFormatSupported(format)) {
-        // on essaye encore avec la pire merde
-        format.setSampleRate(8000);
-        format.setSampleSize(8);
     }
 
     return format;
 }
 
-void Lockin2Gui::on_buttonAutoPhase_clicked()
+void LockinGui::on_buttonAutoPhase_clicked()
 {
     _lockin->setPhase(_lockin->autoPhase());
 }
 
-void Lockin2Gui::startLockin()
+void LockinGui::startLockin()
 {
     QAudioDeviceInfo deviceInfo = ui->audioDeviceSelector->itemData(ui->audioDeviceSelector->currentIndex()).value<QAudioDeviceInfo>();
 
@@ -268,7 +258,7 @@ void Lockin2Gui::startLockin()
     }
 }
 
-void Lockin2Gui::stopLockin()
+void LockinGui::stopLockin()
 {
     _lockin->stop();
     ui->frame->setEnabled(true);
@@ -276,9 +266,9 @@ void Lockin2Gui::stopLockin()
     ui->info->setText("lockin stoped");
 }
 
-void Lockin2Gui::on_vumeterTime_valueChanged(int timems)
+void LockinGui::on_vumeterTime_valueChanged(int time_ms)
 {
-    _lockin->setVumeterTime(qreal(timems) / 1000.0);
+    _lockin->setVumeterTime(qreal(time_ms) / 1000.0);
 
-    ui->vumeterLabel->setText(QString("%1 ms").arg(timems));
+    ui->vumeterLabel->setText(QString("%1 ms").arg(time_ms));
 }

@@ -1,11 +1,11 @@
 #include <QApplication>
-#include "lockin2gui.hh"
+#include "lockin_gui.hh"
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    Lockin2Gui l;
+    LockinGui l;
     l.show();
 
     return a.exec();

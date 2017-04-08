@@ -1,21 +1,21 @@
-#include "qfifo.hh"
+#include "fifo.hh"
 
-QFifo::QFifo(QObject *parent) :
+Fifo::Fifo(QObject *parent) :
     QIODevice(parent)
 {
 }
 
-bool QFifo::atEnd() const
+bool Fifo::atEnd() const
 {
     return (_data.isEmpty() && QIODevice::atEnd());
 }
 
-qint64 QFifo::bytesAvailable() const
+qint64 Fifo::bytesAvailable() const
 {
     return _data.size() + QIODevice::bytesAvailable();
 }
 
-qint64 QFifo::readData(char *data, qint64 len)
+qint64 Fifo::readData(char *data, qint64 len)
 {
     if ((len = qMin(len, qint64(_data.size()))) <= 0)
         return qint64(0);
@@ -25,7 +25,7 @@ qint64 QFifo::readData(char *data, qint64 len)
     return len;
 }
 
-qint64 QFifo::writeData(const char *data, qint64 len)
+qint64 Fifo::writeData(const char *data, qint64 len)
 {
     _data.append(data, len);
     return len;
