@@ -26,8 +26,8 @@
 #include <QAudioDeviceInfo>
 #include <QWidget>
 #include "lockin.hh"
-#include "xy/xyscene.hh"
-#include "xy/xyview.hh"
+#include "xygraph/xyscene.hh"
+#include "xygraph/xyview.hh"
 
 namespace Ui {
 class LockinGui;

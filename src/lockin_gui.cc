@@ -24,7 +24,7 @@
 #include "lockin_gui.hh"
 #include "ui_lockin_gui.h"
 #include "audioutils.hh"
-#include "xy/xyscene.hh"
+#include "xygraph/xyscene.hh"
 #include <QDebug>
 #include <QTime>
 #include <QSettings>
