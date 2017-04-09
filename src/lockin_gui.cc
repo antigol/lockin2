@@ -164,7 +164,7 @@ void LockinGui::getValues(qreal time, qreal x, qreal y)
     str = str.arg(_lockin->format().sampleRate());
     str = str.arg(_lockin->format().sampleSize());
 
-    ui->info->setText(str);
+	ui->info->setPlainText(str);
 
     std::cout << time << " " << x << std::endl;
 
@@ -220,7 +220,7 @@ void LockinGui::startLockin()
         str = str.arg(_lockin->format().sampleRate());
         str = str.arg(_lockin->format().sampleSize());
 
-        ui->info->setText(str);
+		ui->info->setPlainText(str);
 
         ui->buttonAutoPhase->setEnabled(true);
     } else {
@@ -234,7 +234,7 @@ void LockinGui::stopLockin()
     _lockin->stop();
     ui->frame->setEnabled(true);
     ui->buttonStartStop->setText("Start");
-    ui->info->setText("lockin stoped");
+	ui->info->setPlainText("lockin stoped");
     ui->buttonAutoPhase->setEnabled(false);
 }
 
