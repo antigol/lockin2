@@ -68,8 +68,8 @@ private slots:
     void audioStateChanged(QAudio::State state);
 
 private:
-    void readSoudCard();
-    QVector<QPair<qreal, qreal>> &parseChopperSignal(qreal phase);
+	void readSoudCard(); // write into _left_right
+	void parseChopperSignal(); // write into _sin_cos
 
 
     QAudioInput *_audioInput; // is null when lockin stoped
@@ -83,7 +83,7 @@ private:
     int _sampleIntegration; // don't change it during running
 
     QVector<QPair<qreal, qreal>> _left_right; // raw signal
-    QVector<QPair<qreal, qreal>> _tmp_sin_cos; // sin/cos constructed from right signal
+	QVector<QPair<qreal, qreal>> _sin_cos; // sin/cos constructed from right signal
     QList<QPair<qreal, qreal>> _dataXY; // product of left signal with sin/cos
 
     qreal _timeValue;

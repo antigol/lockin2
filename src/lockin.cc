@@ -145,7 +145,7 @@ qreal Lockin::phase() const
 qreal Lockin::autoPhase() const
 {
     Q_ASSERT(_audioInput != 0);
-    return (_phase + std::atan2(_yValue, _xValue)) * 180.0/M_PI;
+	return (_phase + 0.1 * std::atan2(_yValue, _xValue)) * 180.0/M_PI;
 }
 
 QVector<QPair<qreal, qreal>> &Lockin::raw_signals()
@@ -193,18 +193,18 @@ void Lockin::interpretInput()
 
     // load audio channels and cast them in the interval (-1, 1)
     readSoudCard();
-    emit newRawData();
+	emit newRawData();
 
     if (_left_right.empty()) {
         qDebug() << __FUNCTION__ << ": empty channels";
         return;
     }
 
-    QVector<QPair<qreal,qreal>> &sin_cos = parseChopperSignal(_phase);
+	parseChopperSignal();
 
     for (int i = 0; i < _left_right.size(); ++i) {
-        qreal x = sin_cos[i].first * _left_right[i].first; // sin
-        qreal y = sin_cos[i].second * _left_right[i].second; // cos
+		qreal x = _sin_cos[i].first * _left_right[i].first; // sin
+		qreal y = _sin_cos[i].second * _left_right[i].second; // cos
 
         if (!std::isnan(x) && !std::isnan(y)) {
             _dataXY << QPair<qreal, qreal>(x, y);
@@ -236,13 +236,14 @@ void Lockin::interpretInput()
     _yValue = y;
 
 
-    static qreal total_time = 0.0;
+	emit newValues(_timeValue, x, y);
+
+
+	static qreal total_time = 0.0;
     static int total_calls = 0;
     total_time += time.elapsed();
     total_calls += 1;
     qDebug() << __FUNCTION__ << ": execution time " << (total_time / total_calls) << "ms";
-
-    emit newValues(_timeValue, x, y);
 }
 
 void Lockin::audioStateChanged(QAudio::State state)
@@ -381,16 +382,16 @@ void Lockin::readSoudCard()
     }
 }
 
-QVector<QPair<qreal,qreal>> &Lockin::parseChopperSignal(qreal phase)
+void Lockin::parseChopperSignal()
 {
     const QPair<qreal, qreal> ignoredValue(NAN, NAN);
 
-    _tmp_sin_cos.clear();
+	_sin_cos.clear();
 
     int i = 0;
 
     // set the first value as ignored
-    _tmp_sin_cos << ignoredValue;
+	_sin_cos << ignoredValue;
     i++;
 
     for (; i < _left_right.size(); ++i) {
@@ -398,7 +399,7 @@ QVector<QPair<qreal,qreal>> &Lockin::parseChopperSignal(qreal phase)
             // first rising edge
             break;
         }
-        _tmp_sin_cos << ignoredValue;
+		_sin_cos << ignoredValue;
     }
 
     int periodSize = 0;
@@ -408,8 +409,8 @@ QVector<QPair<qreal,qreal>> &Lockin::parseChopperSignal(qreal phase)
             // rising edge
 
             for (int j = 0; j < periodSize; ++j) {
-                qreal angle = 2.0 * M_PI * (qreal(j) / qreal(periodSize)) + phase;
-                _tmp_sin_cos << QPair<qreal, qreal>(std::sin(angle), std::cos(angle));
+				qreal angle = 2.0 * M_PI * (qreal(j) / qreal(periodSize)) + _phase;
+				_sin_cos << QPair<qreal, qreal>(std::sin(angle), std::cos(angle));
             }
 
             periodSize = 0;
@@ -417,9 +418,8 @@ QVector<QPair<qreal,qreal>> &Lockin::parseChopperSignal(qreal phase)
     }
 
     for (int j = 0; j < periodSize; ++j) {
-        _tmp_sin_cos << ignoredValue;
+		_sin_cos << ignoredValue;
     }
 
-    Q_ASSERT(_tmp_sin_cos.size() == _left_right.size());
-    return _tmp_sin_cos;
+	Q_ASSERT(_sin_cos.size() == _left_right.size());
 }
