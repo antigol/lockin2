@@ -26,18 +26,26 @@
 #include <QIODevice>
 #include <QByteArray>
 
+/* This class is similar to QBuffer
+ * Except that it always read at the begining of the ByteArray
+ * and free the memory after reading it
+ *
+ * Also it always write at the end
+ */
+
 class Fifo : public QIODevice
 {
     Q_OBJECT
 public:
     explicit Fifo(QObject *parent = 0);
     
-    bool atEnd() const;
-    qint64 bytesAvailable() const;
+    bool atEnd() const override;
+    qint64 bytesAvailable() const override;
+    bool isSequential() const override;
 
 private:
-    qint64 readData(char *data, qint64 len);
-    qint64 writeData(const char *data, qint64 len);
+    qint64 readData(char *data, qint64 len) override;
+    qint64 writeData(const char *data, qint64 len) override;
 
     QByteArray _data;
 };
