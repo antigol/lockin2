@@ -25,6 +25,8 @@
 
 #include <QAudioDeviceInfo>
 #include <QWidget>
+#include <QTime>
+#include <QTimer>
 #include "lockin.hh"
 #include "xygraph/xyscene.hh"
 #include "xygraph/xyview.hh"
@@ -46,6 +48,7 @@ private slots:
     void on_buttonAutoPhase_clicked();
     void updateGraphs();
     void getValues(qreal time, qreal x, qreal y);
+    void regraph();
 
 private:
     void startLockin();
@@ -54,9 +57,9 @@ private:
 
     Ui::LockinGui *ui;
 
-    // Lockin
     Lockin *_lockin;
-
+    QTime _run_time;
+    QTimer _regraph_timer;
 
     // Plots
     XYScene *_vumeter_left;

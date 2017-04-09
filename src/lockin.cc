@@ -30,18 +30,12 @@
 Lockin::Lockin(QObject *parent) :
     QObject(parent)
 {
-    //    _bufferWrite = new QBuffer(&_byteArray, this);
-    //    _bufferWrite->open(QIODevice::WriteOnly | QIODevice::Unbuffered);
-
-    //    _bufferRead = new QBuffer(&_byteArray, this);
-    //    _bufferRead->open(QIODevice::ReadOnly | QIODevice::Unbuffered);
     _fifo = new Fifo(this);
-    _fifo->open(QIODevice::ReadWrite /*| QIODevice::Unbuffered*/);
+    _fifo->open(QIODevice::ReadWrite);
 
     _audioInput = 0;
 
     setOutputPeriod(0.5);
-//    setVumeterTime(0.0);
     setIntegrationTime(3.0);
     setPhase(0.0);
 }

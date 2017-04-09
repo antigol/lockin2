@@ -87,10 +87,13 @@ LockinGui::LockinGui(QWidget *parent) :
     _output->setZoom(0.0, 15.0, -1.0, 1.0);
     ui->output->setScene(_output);
 
-    _x_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::white), 1.5));
-    _output->addScatterplot(_x_plot);
     _y_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::darkGray), 1.5));
     _output->addScatterplot(_y_plot);
+    _x_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::white), 1.5));
+    _output->addScatterplot(_x_plot);
+
+    _regraph_timer.setSingleShot(true);
+    connect(&_regraph_timer, SIGNAL(timeout()), this, SLOT(regraph()));
 }
 
 LockinGui::~LockinGui()
@@ -132,33 +135,32 @@ void LockinGui::updateGraphs()
     _vumeter_left_plot->clear();
     _vumeter_right_plot->clear();
     qreal msPerDot = 1000.0 / qreal(_lockin->format().sampleRate());
-    for (int i = 0; i < data.size(); ++i) {
+    for (int i = 0; i < qMin(data.size(), 2048); ++i) {
         qreal t = i*msPerDot;
         _vumeter_left_plot->append(QPointF(t, data[i].first));
         _vumeter_right_plot->append(QPointF(t, data[i].second));
     }
 
-    _vumeter_left->regraph();
-    _vumeter_right->regraph();
+    if (!_regraph_timer.isActive()) {
+        _regraph_timer.start(50);
+    }
 }
 
 void LockinGui::getValues(qreal time, qreal x, qreal y)
 {
-    QTime execTime;
-    execTime.start();
-
     ui->lcdForXValue->display(x);
 
     QString str = QString::fromUtf8("phase = %1°\n"
                                     "autophase = %2°\n"
-                                    "execution time = %3\n"
-                                    "sample rate = %4 Hz\n"
-                                    "sample size = %5 bits");
+                                    "execution time = %3 (%4)\n"
+                                    "sample rate = %5 Hz\n"
+                                    "sample size = %6 bits");
 
     str = str.arg(_lockin->phase());
     qreal d = _lockin->autoPhase() - _lockin->phase();
     str = str.arg((d>0 ? "+":"")+QString::number(d));
     str = str.arg(QTime(0, 0).addMSecs(1000 * time).toString());
+    str = str.arg(QTime(0, 0).addMSecs(_run_time.elapsed()).toString());
     str = str.arg(_lockin->format().sampleRate());
     str = str.arg(_lockin->format().sampleSize());
 
@@ -173,10 +175,13 @@ void LockinGui::getValues(qreal time, qreal x, qreal y)
     if (zoom.xMin() < time && zoom.xMax() < time && zoom.xMax() > time * 0.9)
         zoom.setXMax(time + 0.20 * zoom.width());
     _output->setZoom(zoom);
+}
 
+void LockinGui::regraph()
+{
+    _vumeter_left->regraph();
+    _vumeter_right->regraph();
     _output->regraph();
-
-//    qDebug() << __FUNCTION__ << ": execution time : " << execTime.elapsed() << " ms";
 }
 
 void LockinGui::startLockin()
@@ -189,12 +194,14 @@ void LockinGui::startLockin()
     QAudioFormat format = foundFormat(deviceInfo);
 
     qDebug() << "========== format infos ========== ";
-    showQAudioFormat(format);
+    qDebug() << format;
 
     _lockin->setOutputPeriod(1.0 / ui->outputFrequency->value());
     _lockin->setIntegrationTime(ui->integrationTime->value());
 
     if (_lockin->start(deviceInfo, format)) {
+        _run_time.start();
+
         _x_plot->clear();
         _y_plot->clear();
         _vumeter_left_plot->clear();
@@ -205,7 +212,7 @@ void LockinGui::startLockin()
 
         QString str = QString::fromUtf8("phase = %1°\n"
                                         "autophase = <none>\n"
-                                        "execution time = 0\n"
+                                        "execution time = <just started>\n"
                                         "sample rate = %2 Hz\n"
                                         "sample size = %3 bits");
 
@@ -216,7 +223,6 @@ void LockinGui::startLockin()
         ui->info->setText(str);
 
         ui->buttonAutoPhase->setEnabled(true);
-
     } else {
         qDebug() << __FUNCTION__ << ": cannot start lockin";
         QMessageBox::warning(this, "Start lockin fail", "Start has failed.");
@@ -246,6 +252,10 @@ QAudioFormat LockinGui::foundFormat(const QAudioDeviceInfo &device)
     QAudioFormat format = device.preferredFormat();
     format.setChannelCount(2);
     format.setCodec("audio/pcm");
+
+//    format.setSampleRate(maxInList(device.supportedSampleRates(), format.sampleRate()));
+    // If the sample rate is too high, the lockin takes late
+    format.setSampleRate(11025);
 
     format.setSampleSize(maxInList(device.supportedSampleSizes(), format.sampleSize()));
 
