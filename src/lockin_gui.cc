@@ -57,8 +57,8 @@ LockinGui::LockinGui(QWidget *parent) :
 
     _vumeter_left = new XYScene(this);
     _vumeter_left->setBackgroundBrush(QBrush(Qt::black));
-	_vumeter_left->setAxesPen(QPen(Qt::lightGray));
-	_vumeter_left->setSubaxesPen(QPen(QBrush(Qt::darkGray), 1, Qt::DashLine));
+    _vumeter_left->setAxesPen(QPen(Qt::lightGray));
+    _vumeter_left->setSubaxesPen(QPen(QBrush(Qt::darkGray), 1, Qt::DashLine));
     _vumeter_left->setTextColor(Qt::gray);
     _vumeter_left->setZoom(0, 100, -1.1, 1.1);
     ui->vumeter->setScene(_vumeter_left);
@@ -69,8 +69,8 @@ LockinGui::LockinGui(QWidget *parent) :
 
     _vumeter_right = new XYScene(this);
     _vumeter_right->setBackgroundBrush(QBrush(Qt::black));
-	_vumeter_right->setAxesPen(QPen(Qt::lightGray));
-	_vumeter_right->setSubaxesPen(QPen(QBrush(Qt::darkGray), 1, Qt::DashLine));
+    _vumeter_right->setAxesPen(QPen(Qt::lightGray));
+    _vumeter_right->setSubaxesPen(QPen(QBrush(Qt::darkGray), 1, Qt::DashLine));
     _vumeter_right->setTextColor(Qt::gray);
     _vumeter_right->setZoom(0, 100, -1.1, 1.1);
     ui->pll->setScene(_vumeter_right);
@@ -81,8 +81,8 @@ LockinGui::LockinGui(QWidget *parent) :
 
     _output = new XYScene(this);
     _output->setBackgroundBrush(QBrush(Qt::black));
-	_output->setAxesPen(QPen(Qt::lightGray));
-	_output->setSubaxesPen(QPen(QBrush(Qt::darkGray), 1, Qt::DashLine));
+    _output->setAxesPen(QPen(Qt::lightGray));
+    _output->setSubaxesPen(QPen(QBrush(Qt::darkGray), 1, Qt::DashLine));
     _output->setTextColor(Qt::gray);
     _output->setZoom(0.0, 15.0, -1.0, 1.0);
     ui->output->setScene(_output);
@@ -253,7 +253,7 @@ QAudioFormat LockinGui::foundFormat(const QAudioDeviceInfo &device)
     format.setChannelCount(2);
     format.setCodec("audio/pcm");
 
-//    format.setSampleRate(maxInList(device.supportedSampleRates(), format.sampleRate()));
+    //    format.setSampleRate(maxInList(device.supportedSampleRates(), format.sampleRate()));
     // If the sample rate is too high, the lockin takes late
     format.setSampleRate(11025);
 
