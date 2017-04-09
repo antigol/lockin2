@@ -43,10 +43,10 @@ public:
 
 private slots:
     void on_buttonStartStop_clicked();
-    void updateGraphs();
-    void getValues(qreal time, qreal x, qreal y);
     void on_buttonAutoPhase_clicked();
     void on_vumeterTime_valueChanged(int time_ms);
+    void updateGraphs();
+    void getValues(qreal time, qreal x, qreal y);
 
 private:
     void startLockin();

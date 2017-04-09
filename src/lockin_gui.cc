@@ -124,10 +124,21 @@ void LockinGui::on_buttonStartStop_clicked()
     }
 }
 
+void LockinGui::on_buttonAutoPhase_clicked()
+{
+    _lockin->setPhase(_lockin->autoPhase());
+}
+
+void LockinGui::on_vumeterTime_valueChanged(int time_ms)
+{
+    _lockin->setVumeterTime(qreal(time_ms) / 1000.0);
+
+    ui->vumeterLabel->setText(QString("%1 ms").arg(time_ms));
+}
+
 void LockinGui::updateGraphs()
 {
-    // vumeter & pll graphs
-    const QList<QPair<qreal, qreal>> &data = _lockin->vumeterData();
+    const QVector<QPair<qreal, qreal>> &data = _lockin->vumeterData();
     _vumeter_left_plot->clear();
     _vumeter_right_plot->clear();
     qreal msPerDot = 1000.0 / qreal(_lockin->format().sampleRate());
@@ -185,39 +196,6 @@ void LockinGui::getValues(qreal time, qreal x, qreal y)
 //    qDebug() << __FUNCTION__ << ": execution time : " << execTime.elapsed() << " ms";
 }
 
-template <typename T>
-T maxInList(const QList<T> &list, T def)
-{
-    T max = def;
-    for (int i = 0; i < list.size(); ++i)
-        max = qMax(max, list[i]);
-    return max;
-}
-
-QAudioFormat LockinGui::foundFormat(const QAudioDeviceInfo &device)
-{
-    QAudioFormat format = device.preferredFormat();
-    format.setChannelCount(2);
-    format.setCodec("audio/pcm");
-
-    format.setSampleSize(maxInList(device.supportedSampleSizes(), format.sampleSize()));
-
-    if (!device.isFormatSupported(format)) {
-        format = device.nearestFormat(format);
-
-        // Required values
-        format.setChannelCount(2);
-        format.setCodec("audio/pcm");
-    }
-
-    return format;
-}
-
-void LockinGui::on_buttonAutoPhase_clicked()
-{
-    _lockin->setPhase(_lockin->autoPhase());
-}
-
 void LockinGui::startLockin()
 {
     QAudioDeviceInfo deviceInfo = ui->audioDeviceSelector->itemData(ui->audioDeviceSelector->currentIndex()).value<QAudioDeviceInfo>();
@@ -269,9 +247,31 @@ void LockinGui::stopLockin()
     ui->buttonAutoPhase->setEnabled(false);
 }
 
-void LockinGui::on_vumeterTime_valueChanged(int time_ms)
+template <typename T>
+T maxInList(const QList<T> &list, T def)
 {
-    _lockin->setVumeterTime(qreal(time_ms) / 1000.0);
-
-    ui->vumeterLabel->setText(QString("%1 ms").arg(time_ms));
+    T max = def;
+    for (int i = 0; i < list.size(); ++i)
+        max = qMax(max, list[i]);
+    return max;
 }
+
+QAudioFormat LockinGui::foundFormat(const QAudioDeviceInfo &device)
+{
+    QAudioFormat format = device.preferredFormat();
+    format.setChannelCount(2);
+    format.setCodec("audio/pcm");
+
+    format.setSampleSize(maxInList(device.supportedSampleSizes(), format.sampleSize()));
+
+    if (!device.isFormatSupported(format)) {
+        format = device.nearestFormat(format);
+
+        // Required values
+        format.setChannelCount(2);
+        format.setCodec("audio/pcm");
+    }
+
+    return format;
+}
+

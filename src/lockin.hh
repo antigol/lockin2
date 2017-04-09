@@ -30,6 +30,7 @@
 #include <QDataStream>
 #include <QPair>
 #include <QMutex>
+#include <QVector>
 
 class Fifo;
 
@@ -54,7 +55,7 @@ public:
     void setPhase(qreal phase);
     qreal phase() const;
     qreal autoPhase() const;
-    QList<QPair<qreal, qreal>> &vumeterData();
+    QVector<QPair<qreal, qreal> > &vumeterData();
     const QAudioFormat &format() const;
     void stop();
 
@@ -68,9 +69,9 @@ private slots:
     void audioStateChanged(QAudio::State state);
 
 private:
-    void saveVumeterData(const QList<qreal> &leftList, const QList<qreal> &rightList);
-    void readSoudCard(QList<qreal> &leftList, QList<qreal> &rightList);
-    QList<QPair<qreal, qreal>> parseChopperSignal(const QList<qreal> &signal, qreal phase);
+    void saveVumeterData(const QVector<qreal> &left, const QVector<qreal> &right);
+    void readSoudCard(QVector<qreal> &leftList, QVector<qreal> &rightList);
+    QVector<QPair<qreal, qreal> > &parseChopperSignal(const QVector<qreal> &signal, qreal phase);
 
 
     // vaut 0 quand c'est arrêté
@@ -99,7 +100,11 @@ private:
     qreal _integrationTime;
     int _sampleIntegration;
 
-    QList<QPair<qreal, qreal>> _vumeterData; // <left, sin>
+    QVector<QPair<qreal, qreal>> _vumeterData; // <left, right>
+
+    QVector<qreal> _tmp_left;
+    QVector<qreal> _tmp_right;
+    QVector<QPair<qreal, qreal>> _tmp_sin_cos;
 
     qreal _timeValue;
 //    QList<QPair<qreal, QPair<qreal, qreal> > > _values;

@@ -157,7 +157,7 @@ qreal Lockin::autoPhase() const
     return (_phase + std::atan2(_yValue, _xValue)) * 180.0/M_PI;
 }
 
-QList<QPair<qreal, qreal>> &Lockin::vumeterData()
+QVector<QPair<qreal, qreal>> &Lockin::vumeterData()
 {
     return _vumeterData;
 }
@@ -198,68 +198,62 @@ void Lockin::interpretInput()
      * 1.0s 500Hz -> 0.4%
      */
 
-
-    QList<qreal> leftSignal;
-    QList<qreal> rightSignal;
+    _tmp_left.clear();
+    _tmp_right.clear();
 
     // load audio channels and cast them in the interval (-1, 1)
-    readSoudCard(leftSignal, rightSignal);
+    readSoudCard(_tmp_left, _tmp_right);
 
-    if (leftSignal.size() == 0 || rightSignal.size() == 0) {
+    if (_tmp_left.size() == 0 || _tmp_right.size() == 0) {
         qDebug() << __FUNCTION__ << ": empty channels";
         return;
     }
 
-    saveVumeterData(leftSignal, rightSignal);
+    saveVumeterData(_tmp_left, _tmp_right);
 
-    QList<QPair<qreal, qreal>> chopperSinCos = parseChopperSignal(rightSignal, _phase);
+    QVector<QPair<qreal,qreal>> &sin_cos = parseChopperSignal(_tmp_right, _phase);
 
-    // multiplie le leftSignal ([-1;1]) par chopperSinCos ([-1;1])
-    for (int i = 0; i < leftSignal.size(); ++i) {
-        qreal x = chopperSinCos[i].first * leftSignal[i]; // sin
-        qreal y = chopperSinCos[i].second * leftSignal[i]; // cos
-        _dataXY << QPair<qreal, qreal>(x, y);
+    for (int i = 0; i < _tmp_left.size(); ++i) {
+        qreal x = sin_cos[i].first * _tmp_left[i]; // sin
+        qreal y = sin_cos[i].second * _tmp_right[i]; // cos
+
+        if (!std::isnan(x) && !std::isnan(y)) {
+            _dataXY << QPair<qreal, qreal>(x, y);
+        }
     }
 
-    // le nombre d'échantillons correslondant au temps d'integration
+    // stop if there is not enough values into data xy
     if (_dataXY.size() < _sampleIntegration) {
-        // pas encore assez d'elements pour faire la moyenne
-        emit info("wait more input data...");
+        emit info("need more data for the integration time");
         return;
     }
 
-    // supprime les valeurs en trop
+    // remove the old unneeded values
     while (_dataXY.size() > _sampleIntegration)
         _dataXY.removeFirst();
 
-    qreal n = 0.0;
     qreal x = 0.0;
     qreal y = 0.0;
 
     for (int i = 0; i < _dataXY.size(); ++i) {
-        if (!std::isnan(_dataXY[i].first) && !std::isnan(_dataXY[i].second)) {
-            x += _dataXY[i].first;
-            y += _dataXY[i].second;
-            n += 1.0;
-        }
+        x += _dataXY[i].first;
+        y += _dataXY[i].second;
     }
 
-    if (n == 0.0) {
-        qDebug() << __FUNCTION__ << ": not enough data";
-        emit info("signal too low");
-        return;
-    }
+    x /= qreal(_sampleIntegration);
+    y /= qreal(_sampleIntegration);
 
-    x /= n;
-    y /= n;
-
-    //    _values << QPair<qreal, QPair<qreal, qreal> >(_timeValue, QPair<qreal, qreal>(x, y));
     _xValue = x;
     _yValue = y;
 
-    emit newValues(_timeValue, x, y);
 
-    qDebug() << __FUNCTION__ << ": execution time " << time.elapsed() << "ms";
+    static qreal total_time = 0.0;
+    static int total_calls = 0;
+    total_time += time.elapsed();
+    total_calls += 1;
+    qDebug() << __FUNCTION__ << ": execution time " << (total_time / total_calls) << "ms";
+
+    emit newValues(_timeValue, x, y);
 }
 
 void Lockin::audioStateChanged(QAudio::State state)
@@ -280,19 +274,19 @@ void Lockin::audioStateChanged(QAudio::State state)
     }
 }
 
-void Lockin::saveVumeterData(const QList<qreal> &leftList, const QList<qreal> &rightList)
+void Lockin::saveVumeterData(const QVector<qreal> &left, const QVector<qreal> &right)
 {
-    if (leftList.size() >= _sampleVumeter) {
+    if (left.size() >= _sampleVumeter) {
         _vumeterData.clear();
         _vumeterData.reserve(_sampleVumeter);
-        for (int i = leftList.size() - _sampleVumeter; i < leftList.size(); ++i) {
-            _vumeterData.append(QPair<qreal, qreal>(leftList[i], rightList[i]));
+        for (int i = left.size() - _sampleVumeter; i < left.size(); ++i) {
+            _vumeterData.append(QPair<qreal, qreal>(left[i], right[i]));
         }
         emit newVumeterData();
     }
 }
 
-void Lockin::readSoudCard(QList<qreal> &leftList, QList<qreal> &rightList)
+void Lockin::readSoudCard(QVector<qreal> &leftList, QVector<qreal> &rightList)
 {
     qreal middle = 0;
 
@@ -402,16 +396,16 @@ void Lockin::readSoudCard(QList<qreal> &leftList, QList<qreal> &rightList)
     }
 }
 
-QList<QPair<qreal, qreal>> Lockin::parseChopperSignal(const QList<qreal> &signal, qreal phase)
+QVector<QPair<qreal,qreal>> &Lockin::parseChopperSignal(const QVector<qreal> &signal, qreal phase)
 {
     const QPair<qreal, qreal> ignoredValue(NAN, NAN);
 
-    QList<QPair<qreal, qreal>> out;
+    _tmp_sin_cos.clear();
 
     int i = 0;
 
     // set the first value as ignored
-    out << ignoredValue;
+    _tmp_sin_cos << ignoredValue;
     i++;
 
     for (; i < signal.size(); ++i) {
@@ -419,7 +413,7 @@ QList<QPair<qreal, qreal>> Lockin::parseChopperSignal(const QList<qreal> &signal
             // first rising edge
             break;
         }
-        out << ignoredValue;
+        _tmp_sin_cos << ignoredValue;
     }
 
     int periodSize = 0;
@@ -430,7 +424,7 @@ QList<QPair<qreal, qreal>> Lockin::parseChopperSignal(const QList<qreal> &signal
 
             for (int j = 0; j < periodSize; ++j) {
                 qreal angle = 2.0 * M_PI * (qreal(j) / qreal(periodSize)) + phase;
-                out << QPair<qreal, qreal>(std::sin(angle), std::cos(angle));
+                _tmp_sin_cos << QPair<qreal, qreal>(std::sin(angle), std::cos(angle));
             }
 
             periodSize = 0;
@@ -438,9 +432,9 @@ QList<QPair<qreal, qreal>> Lockin::parseChopperSignal(const QList<qreal> &signal
     }
 
     for (int j = 0; j < periodSize; ++j) {
-        out << ignoredValue;
+        _tmp_sin_cos << ignoredValue;
     }
 
-    Q_ASSERT(out.size() == signal.size());
-    return out;
+    Q_ASSERT(_tmp_sin_cos.size() == signal.size());
+    return _tmp_sin_cos;
 }
