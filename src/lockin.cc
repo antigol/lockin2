@@ -41,7 +41,7 @@ Lockin::Lockin(QObject *parent) :
     _audioInput = 0;
 
     setOutputPeriod(0.5);
-    setVumeterTime(0.0);
+//    setVumeterTime(0.0);
     setIntegrationTime(3.0);
     setPhase(0.0);
 }
@@ -99,9 +99,6 @@ bool Lockin::start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &form
     // nombre d'échantillons pour le temps d'integration
     _sampleIntegration = format.sampleRate() * _integrationTime;
 
-    // nombre d'échantillons pour un affichage de vumeter
-    _sampleVumeter = _vumeterTime * format.sampleRate();
-
     // nettoyage des variables
     _fifo->readAll(); // vide le fifo
     _dataXY.clear(); // vide <x,y>
@@ -135,12 +132,6 @@ qreal Lockin::integrationTime() const
     return _integrationTime;
 }
 
-void Lockin::setVumeterTime(qreal vumeterTime)
-{
-    _vumeterTime = vumeterTime;
-    _sampleVumeter = _vumeterTime * _format.sampleRate();
-}
-
 void Lockin::setPhase(qreal phase)
 {
     _phase = phase * M_PI/180.0;
@@ -157,9 +148,9 @@ qreal Lockin::autoPhase() const
     return (_phase + std::atan2(_yValue, _xValue)) * 180.0/M_PI;
 }
 
-QVector<QPair<qreal, qreal>> &Lockin::vumeterData()
+QVector<QPair<qreal, qreal>> &Lockin::raw_signals()
 {
-    return _vumeterData;
+    return _left_right;
 }
 
 const QAudioFormat &Lockin::format() const
@@ -198,24 +189,22 @@ void Lockin::interpretInput()
      * 1.0s 500Hz -> 0.4%
      */
 
-    _tmp_left.clear();
-    _tmp_right.clear();
+    _left_right.clear();
 
     // load audio channels and cast them in the interval (-1, 1)
-    readSoudCard(_tmp_left, _tmp_right);
+    readSoudCard();
+    emit newRawData();
 
-    if (_tmp_left.size() == 0 || _tmp_right.size() == 0) {
+    if (_left_right.empty()) {
         qDebug() << __FUNCTION__ << ": empty channels";
         return;
     }
 
-    saveVumeterData(_tmp_left, _tmp_right);
+    QVector<QPair<qreal,qreal>> &sin_cos = parseChopperSignal(_phase);
 
-    QVector<QPair<qreal,qreal>> &sin_cos = parseChopperSignal(_tmp_right, _phase);
-
-    for (int i = 0; i < _tmp_left.size(); ++i) {
-        qreal x = sin_cos[i].first * _tmp_left[i]; // sin
-        qreal y = sin_cos[i].second * _tmp_right[i]; // cos
+    for (int i = 0; i < _left_right.size(); ++i) {
+        qreal x = sin_cos[i].first * _left_right[i].first; // sin
+        qreal y = sin_cos[i].second * _left_right[i].second; // cos
 
         if (!std::isnan(x) && !std::isnan(y)) {
             _dataXY << QPair<qreal, qreal>(x, y);
@@ -274,19 +263,7 @@ void Lockin::audioStateChanged(QAudio::State state)
     }
 }
 
-void Lockin::saveVumeterData(const QVector<qreal> &left, const QVector<qreal> &right)
-{
-    if (left.size() >= _sampleVumeter) {
-        _vumeterData.clear();
-        _vumeterData.reserve(_sampleVumeter);
-        for (int i = left.size() - _sampleVumeter; i < left.size(); ++i) {
-            _vumeterData.append(QPair<qreal, qreal>(left[i], right[i]));
-        }
-        emit newVumeterData();
-    }
-}
-
-void Lockin::readSoudCard(QVector<qreal> &leftList, QVector<qreal> &rightList)
+void Lockin::readSoudCard()
 {
     qreal middle = 0;
 
@@ -314,14 +291,16 @@ void Lockin::readSoudCard(QVector<qreal> &leftList, QVector<qreal> &rightList)
     quint8 _uint8;
     quint16 _uint16;
     quint32 _uint32;
+    QPair<qreal,qreal> pair;
 
     switch (_format.sampleType()) {
     case QAudioFormat::Float:
         while (!in.atEnd()) {
             in >> _float;
-            leftList << _float;
+            pair.first = _float;
             in >> _float;
-            rightList << _float;
+            pair.second = _float;
+            _left_right.append(pair);
             count++;
         }
         break;
@@ -330,27 +309,30 @@ void Lockin::readSoudCard(QVector<qreal> &leftList, QVector<qreal> &rightList)
         case 8:
             while (!in.atEnd()) {
                 in >> _int8;
-                leftList << qreal(_int8) / middle;
+                pair.first = qreal(_int8) / middle;
                 in >> _int8;
-                rightList << qreal(_int8) / middle;
+                pair.second = qreal(_int8) / middle;
+                _left_right.append(pair);
                 count++;
             }
             break;
         case 16:
             while (!in.atEnd()) {
                 in >> _int16;
-                leftList << qreal(_int16) / middle;
+                pair.first = qreal(_int16) / middle;
                 in >> _int16;
-                rightList << qreal(_int16) / middle;
+                pair.second = qreal(_int16) / middle;
+                _left_right.append(pair);
                 count++;
             }
             break;
         case 32:
             while (!in.atEnd()) {
                 in >> _int32;
-                leftList << qreal(_int32) / middle;
+                pair.first = qreal(_int32) / middle;
                 in >> _int32;
-                rightList << qreal(_int32) / middle;
+                pair.second = qreal(_int32) / middle;
+                _left_right.append(pair);
                 count++;
             }
             break;
@@ -361,27 +343,30 @@ void Lockin::readSoudCard(QVector<qreal> &leftList, QVector<qreal> &rightList)
         case 8:
             while (!in.atEnd()) {
                 in >> _uint8;
-                leftList << (qreal(_uint8) / middle) - 1.0;
+                pair.first = (qreal(_uint8) / middle) - 1.0;
                 in >> _uint8;
-                rightList << (qreal(_uint8) / middle) - 1.0;
+                pair.second = (qreal(_uint8) / middle) - 1.0;
+                _left_right.append(pair);
                 count++;
             }
             break;
         case 16:
             while (!in.atEnd()) {
                 in >> _uint16;
-                leftList << (qreal(_uint16) / middle) - 1.0;
+                pair.first = (qreal(_uint16) / middle) - 1.0;
                 in >> _uint16;
-                rightList << (qreal(_uint16) / middle) - 1.0;
+                pair.second = (qreal(_uint16) / middle) - 1.0;
+                _left_right.append(pair);
                 count++;
             }
             break;
         case 32:
             while (!in.atEnd()) {
                 in >> _uint32;
-                leftList << (qreal(_uint32) / middle) - 1.0;
+                pair.first = (qreal(_uint32) / middle) - 1.0;
                 in >> _uint32;
-                rightList << (qreal(_uint32) / middle) - 1.0;
+                pair.second = (qreal(_uint32) / middle) - 1.0;
+                _left_right.append(pair);
                 count++;
             }
             break;
@@ -396,7 +381,7 @@ void Lockin::readSoudCard(QVector<qreal> &leftList, QVector<qreal> &rightList)
     }
 }
 
-QVector<QPair<qreal,qreal>> &Lockin::parseChopperSignal(const QVector<qreal> &signal, qreal phase)
+QVector<QPair<qreal,qreal>> &Lockin::parseChopperSignal(qreal phase)
 {
     const QPair<qreal, qreal> ignoredValue(NAN, NAN);
 
@@ -408,8 +393,8 @@ QVector<QPair<qreal,qreal>> &Lockin::parseChopperSignal(const QVector<qreal> &si
     _tmp_sin_cos << ignoredValue;
     i++;
 
-    for (; i < signal.size(); ++i) {
-        if (signal[i-1] < 0.0 && signal[i] >= 0.0) {
+    for (; i < _left_right.size(); ++i) {
+        if (_left_right[i-1].second < 0.0 && _left_right[i].second >= 0.0) {
             // first rising edge
             break;
         }
@@ -417,9 +402,9 @@ QVector<QPair<qreal,qreal>> &Lockin::parseChopperSignal(const QVector<qreal> &si
     }
 
     int periodSize = 0;
-    for (; i < signal.size(); ++i) {
+    for (; i < _left_right.size(); ++i) {
         periodSize++;
-        if (signal[i-1] < 0.0 && signal[i] >= 0.0) {
+        if (_left_right[i-1].second < 0.0 && _left_right[i].second >= 0.0) {
             // rising edge
 
             for (int j = 0; j < periodSize; ++j) {
@@ -435,6 +420,6 @@ QVector<QPair<qreal,qreal>> &Lockin::parseChopperSignal(const QVector<qreal> &si
         _tmp_sin_cos << ignoredValue;
     }
 
-    Q_ASSERT(_tmp_sin_cos.size() == signal.size());
+    Q_ASSERT(_tmp_sin_cos.size() == _left_right.size());
     return _tmp_sin_cos;
 }

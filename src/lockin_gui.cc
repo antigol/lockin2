@@ -44,14 +44,6 @@ LockinGui::LockinGui(QWidget *parent) :
 
         if (deviceInfo.isFormatSupported(format) && _lockin->isFormatSupported(format)) {
             ui->audioDeviceSelector->addItem(deviceInfo.deviceName(), qVariantFromValue(deviceInfo));
-        } else {
-//            qDebug() << "deviceInfo =";
-//            showQAudioDeviceInfo(deviceInfo);
-//            format = deviceInfo.preferredFormat();
-//            qDebug() << "format = deviceInfo.preferredFormat(); format =";
-//            showQAudioFormat(format);
-//            qDebug() << "deviceInfo.isFormatSupported(format) = " << deviceInfo.isFormatSupported(format);
-//            qDebug() << " ";
         }
     }
 
@@ -59,36 +51,43 @@ LockinGui::LockinGui(QWidget *parent) :
     ui->outputFrequency->setValue(set.value("outputFrequency", 1.0 / _lockin->outputPeriod()).toDouble());
     ui->integrationTime->setValue(set.value("integrationTime", _lockin->integrationTime()).toDouble());
     _lockin->setPhase(set.value("phase", 0).toDouble());
-    ui->vumeterTime->setValue(set.value("vumeterTime", 10).toInt());
-    on_vumeterTime_valueChanged(ui->vumeterTime->value());
 
-    connect(_lockin, SIGNAL(newVumeterData()), this, SLOT(updateGraphs()));
+    connect(_lockin, SIGNAL(newRawData()), this, SLOT(updateGraphs()));
     connect(_lockin, SIGNAL(newValues(qreal,qreal,qreal)), this, SLOT(getValues(qreal,qreal,qreal)));
 
     _vumeter_left = new XYScene(this);
     _vumeter_left->setBackgroundBrush(QBrush(Qt::black));
+    _vumeter_left->setAxesPen(QPen(Qt::gray));
+    _vumeter_left->setSubaxesPen(QPen(QBrush(Qt::gray), 1, Qt::DashLine));
+    _vumeter_left->setTextColor(Qt::gray);
     _vumeter_left->setZoom(0, 100, -1.1, 1.1);
     ui->vumeter->setScene(_vumeter_left);
 
-    _vumeter_left_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::green), 1.5));
+    _vumeter_left_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::white), 1.5));
     _vumeter_left->addScatterplot(_vumeter_left_plot);
 
 
     _vumeter_right = new XYScene(this);
     _vumeter_right->setBackgroundBrush(QBrush(Qt::black));
+    _vumeter_right->setAxesPen(QPen(Qt::gray));
+    _vumeter_right->setSubaxesPen(QPen(QBrush(Qt::gray), 1, Qt::DashLine));
+    _vumeter_right->setTextColor(Qt::gray);
     _vumeter_right->setZoom(0, 100, -1.1, 1.1);
     ui->pll->setScene(_vumeter_right);
 
-    _vumeter_right_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::green), 1.5));
+    _vumeter_right_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::white), 1.5));
     _vumeter_right->addScatterplot(_vumeter_right_plot);
 
 
     _output = new XYScene(this);
     _output->setBackgroundBrush(QBrush(Qt::black));
+    _output->setAxesPen(QPen(Qt::gray));
+    _output->setSubaxesPen(QPen(QBrush(Qt::gray), 1, Qt::DashLine));
+    _output->setTextColor(Qt::gray);
     _output->setZoom(0.0, 15.0, -1.0, 1.0);
     ui->output->setScene(_output);
 
-    _x_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::red), 1.5));
+    _x_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::white), 1.5));
     _output->addScatterplot(_x_plot);
     _y_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::darkGray), 1.5));
     _output->addScatterplot(_y_plot);
@@ -100,7 +99,6 @@ LockinGui::~LockinGui()
     set.setValue("outputFrequency", ui->outputFrequency->value());
     set.setValue("integrationTime", ui->integrationTime->value());
     set.setValue("phase", _lockin->phase());
-    set.setValue("vumeterTime", ui->vumeterTime->value());
 
     delete _vumeter_left;
     delete _vumeter_right;
@@ -110,7 +108,6 @@ LockinGui::~LockinGui()
     delete _vumeter_right_plot;
     delete _x_plot;
     delete _y_plot;
-    //    qDebug() << __FUNCTION__ << ":" << __LINE__;
 
     delete ui;
 }
@@ -129,16 +126,9 @@ void LockinGui::on_buttonAutoPhase_clicked()
     _lockin->setPhase(_lockin->autoPhase());
 }
 
-void LockinGui::on_vumeterTime_valueChanged(int time_ms)
-{
-    _lockin->setVumeterTime(qreal(time_ms) / 1000.0);
-
-    ui->vumeterLabel->setText(QString("%1 ms").arg(time_ms));
-}
-
 void LockinGui::updateGraphs()
 {
-    const QVector<QPair<qreal, qreal>> &data = _lockin->vumeterData();
+    const QVector<QPair<qreal, qreal>> &data = _lockin->raw_signals();
     _vumeter_left_plot->clear();
     _vumeter_right_plot->clear();
     qreal msPerDot = 1000.0 / qreal(_lockin->format().sampleRate());
@@ -148,14 +138,7 @@ void LockinGui::updateGraphs()
         _vumeter_right_plot->append(QPointF(t, data[i].second));
     }
 
-    _vumeter_left->setXMin(0.0);
-    _vumeter_left->setXMax(msPerDot*data.size());
-
     _vumeter_left->regraph();
-
-    _vumeter_right->setXMin(0.0);
-    _vumeter_right->setXMax(msPerDot*data.size());
-
     _vumeter_right->regraph();
 }
 
@@ -221,6 +204,8 @@ void LockinGui::startLockin()
         ui->buttonStartStop->setText("Stop !");
 
         QString str = QString::fromUtf8("phase = %1°\n"
+                                        "autophase = <none>\n"
+                                        "execution time = 0\n"
                                         "sample rate = %2 Hz\n"
                                         "sample size = %3 bits");
 

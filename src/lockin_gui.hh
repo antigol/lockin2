@@ -44,7 +44,6 @@ public:
 private slots:
     void on_buttonStartStop_clicked();
     void on_buttonAutoPhase_clicked();
-    void on_vumeterTime_valueChanged(int time_ms);
     void updateGraphs();
     void getValues(qreal time, qreal x, qreal y);
 
@@ -54,8 +53,12 @@ private:
     QAudioFormat foundFormat(const QAudioDeviceInfo &device);
 
     Ui::LockinGui *ui;
+
+    // Lockin
     Lockin *_lockin;
 
+
+    // Plots
     XYScene *_vumeter_left;
     XYPointList *_vumeter_left_plot;
 

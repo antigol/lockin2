@@ -51,16 +51,15 @@ public:
     qreal integrationTime() const;
 
 
-    void setVumeterTime(qreal vumeterTime); // le signal qui est sauvé pour être affiché à l'utilisateur
     void setPhase(qreal phase);
     qreal phase() const;
     qreal autoPhase() const;
-    QVector<QPair<qreal, qreal> > &vumeterData();
+    QVector<QPair<qreal, qreal>> &raw_signals();
     const QAudioFormat &format() const;
     void stop();
 
 signals:
-    void newVumeterData();
+    void newRawData();
     void newValues(qreal time, qreal x, qreal y);
     void info(QString msg);
 
@@ -69,45 +68,25 @@ private slots:
     void audioStateChanged(QAudio::State state);
 
 private:
-    void saveVumeterData(const QVector<qreal> &left, const QVector<qreal> &right);
-    void readSoudCard(QVector<qreal> &leftList, QVector<qreal> &rightList);
-    QVector<QPair<qreal, qreal> > &parseChopperSignal(const QVector<qreal> &signal, qreal phase);
+    void readSoudCard();
+    QVector<QPair<qreal, qreal>> &parseChopperSignal(qreal phase);
 
 
-    // vaut 0 quand c'est arrêté
-    QAudioInput *_audioInput;
+    QAudioInput *_audioInput; // is null when lockin stoped
+    Fifo *_fifo; // feeded by _audioInput
 
-    /*
-     * Peuvent être changés quand sa tourne
-     */
-    qreal _phase;
-    qreal _vumeterTime;
-    int _sampleVumeter;
-//    QMutex _vumeterMutex;
+    QAudioFormat _format; // don't change it during running
 
+    qreal _phase; // can be changed during running
+    qreal _outputPeriod; // don't change it during running
+    qreal _integrationTime; // don't change it during running
+    int _sampleIntegration; // don't change it during running
 
-    /*
-     * A ne pas toucher pandant que sa tourne
-     */
-    QAudioFormat _format;
-
-    Fifo *_fifo;
-    QByteArray _byteArray;
-
-    QList<QPair<qreal, qreal>> _dataXY;
-    qreal _outputPeriod;
-
-    qreal _integrationTime;
-    int _sampleIntegration;
-
-    QVector<QPair<qreal, qreal>> _vumeterData; // <left, right>
-
-    QVector<qreal> _tmp_left;
-    QVector<qreal> _tmp_right;
-    QVector<QPair<qreal, qreal>> _tmp_sin_cos;
+    QVector<QPair<qreal, qreal>> _left_right; // raw signal
+    QVector<QPair<qreal, qreal>> _tmp_sin_cos; // sin/cos constructed from right signal
+    QList<QPair<qreal, qreal>> _dataXY; // product of left signal with sin/cos
 
     qreal _timeValue;
-//    QList<QPair<qreal, QPair<qreal, qreal> > > _values;
     qreal _xValue;
     qreal _yValue;
 };
