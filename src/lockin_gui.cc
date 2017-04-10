@@ -39,11 +39,11 @@ LockinGui::LockinGui(QWidget *parent) :
 
     _lockin = new Lockin(this);
 
-    foreach (const QAudioDeviceInfo &deviceInfo, QAudioDeviceInfo::availableDevices(QAudio::AudioInput)) {
-        QAudioFormat format = foundFormat(deviceInfo);
+    foreach (const QAudioDeviceInfo &device, QAudioDeviceInfo::availableDevices(QAudio::AudioInput)) {
+        QAudioFormat format = foundFormat(device);
 
-        if (deviceInfo.isFormatSupported(format) && _lockin->isFormatSupported(format)) {
-            ui->audioDeviceSelector->addItem(deviceInfo.deviceName(), qVariantFromValue(deviceInfo));
+        if (device.isFormatSupported(format) && _lockin->isFormatSupported(format)) {
+            ui->audioDeviceSelector->addItem(device.deviceName(), qVariantFromValue(device));
         }
     }
 
@@ -186,10 +186,19 @@ void LockinGui::startLockin()
 {
     QAudioDeviceInfo deviceInfo = ui->audioDeviceSelector->itemData(ui->audioDeviceSelector->currentIndex()).value<QAudioDeviceInfo>();
 
-    qDebug() << "========== device infos ========== ";
-    showQAudioDeviceInfo(deviceInfo);
+    QAudioDeviceInfo selected_device;
+    foreach (const QAudioDeviceInfo &device, QAudioDeviceInfo::availableDevices(QAudio::AudioInput)) {
+        if (device.deviceName() == ui->audioDeviceSelector->currentText()) {
+            selected_device = device;
+        }
+    }
 
-    QAudioFormat format = foundFormat(deviceInfo);
+    Q_ASSERT(deviceInfo == selected_device);
+
+    qDebug() << "========== device infos ========== ";
+    showQAudioDeviceInfo(selected_device);
+
+    QAudioFormat format = foundFormat(selected_device);
 
     qDebug() << "========== format infos ========== ";
     qDebug() << format;
@@ -197,7 +206,7 @@ void LockinGui::startLockin()
     _lockin->setOutputPeriod(1.0 / ui->outputFrequency->value());
     _lockin->setIntegrationTime(ui->integrationTime->value());
 
-    if (_lockin->start(deviceInfo, format)) {
+    if (_lockin->start(selected_device, format)) {
         _run_time.start();
 
         _x_plot->clear();
