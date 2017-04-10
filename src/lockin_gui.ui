@@ -33,14 +33,14 @@
       <item row="0" column="1">
        <widget class="QComboBox" name="audioDeviceSelector"/>
       </item>
-      <item row="1" column="0">
+      <item row="3" column="0">
        <widget class="QLabel" name="outputFrequencyHzLabel">
         <property name="text">
          <string>Output frequency</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
+      <item row="3" column="1">
        <widget class="QDoubleSpinBox" name="outputFrequency">
         <property name="suffix">
          <string> [Hz]</string>
@@ -50,7 +50,7 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
+      <item row="4" column="1">
        <widget class="QDoubleSpinBox" name="integrationTime">
         <property name="suffix">
          <string> [s]</string>
@@ -63,12 +63,32 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
+      <item row="4" column="0">
        <widget class="QLabel" name="integrationTimeSLabel">
         <property name="text">
          <string>Integration time</string>
         </property>
        </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="sampleRateLabel">
+        <property name="text">
+         <string>Sample Rate</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="sampleRateComboBox"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="sampleSizeLabel">
+        <property name="text">
+         <string>Sample Size</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="sampleSizeComboBox"/>
       </item>
      </layout>
     </widget>

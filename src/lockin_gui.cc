@@ -40,13 +40,7 @@ LockinGui::LockinGui(QWidget *parent) :
     _lockin = new Lockin(this);
 
     foreach (const QAudioDeviceInfo &device, QAudioDeviceInfo::availableDevices(QAudio::AudioInput)) {
-        if (!device.deviceName().contains("alsa_input")) {
-            continue;
-        }
-
-        QAudioFormat format = foundFormat(device);
-
-        if (device.isFormatSupported(format) && _lockin->isFormatSupported(format)) {
+        if (device.deviceName().contains("alsa_input")) {
             ui->audioDeviceSelector->addItem(device.deviceName(), qVariantFromValue(device));
         }
     }
@@ -124,15 +118,6 @@ LockinGui::~LockinGui()
     delete ui;
 }
 
-void LockinGui::on_buttonStartStop_clicked()
-{
-    if (_lockin->isRunning()) {
-        stopLockin();
-    } else {
-        startLockin();
-    }
-}
-
 void LockinGui::on_dial_sliderMoved(int position)
 {
     _lockin->setPhase(qreal(position) / 10.0);
@@ -141,6 +126,30 @@ void LockinGui::on_dial_sliderMoved(int position)
 void LockinGui::on_checkBox_clicked(bool checked)
 {
     _lockin->setInvertLR(checked);
+}
+
+void LockinGui::on_audioDeviceSelector_currentIndexChanged(int arg1)
+{
+    QAudioDeviceInfo selected_device = ui->audioDeviceSelector->itemData(arg1).value<QAudioDeviceInfo>();
+
+    ui->sampleRateComboBox->clear();
+    foreach (int rate, selected_device.supportedSampleRates()) {
+        ui->sampleRateComboBox->addItem(QString::number(rate), rate);
+    }
+
+    ui->sampleSizeComboBox->clear();
+    foreach (int size, selected_device.supportedSampleSizes()) {
+        ui->sampleSizeComboBox->addItem(QString::number(size), size);
+    }
+}
+
+void LockinGui::on_buttonStartStop_clicked()
+{
+    if (_lockin->isRunning()) {
+        stopLockin();
+    } else {
+        startLockin();
+    }
 }
 
 void LockinGui::updateGraphs()
@@ -206,21 +215,16 @@ void LockinGui::regraph()
 
 void LockinGui::startLockin()
 {
-    QAudioDeviceInfo deviceInfo = ui->audioDeviceSelector->itemData(ui->audioDeviceSelector->currentIndex()).value<QAudioDeviceInfo>();
-
-    QAudioDeviceInfo selected_device;
-    foreach (const QAudioDeviceInfo &device, QAudioDeviceInfo::availableDevices(QAudio::AudioInput)) {
-        if (device.deviceName() == ui->audioDeviceSelector->currentText()) {
-            selected_device = device;
-        }
-    }
-
-    Q_ASSERT(deviceInfo == selected_device);
+    QAudioDeviceInfo selected_device = ui->audioDeviceSelector->itemData(ui->audioDeviceSelector->currentIndex()).value<QAudioDeviceInfo>();
 
     qDebug() << "========== device infos ========== ";
     showQAudioDeviceInfo(selected_device);
 
-    QAudioFormat format = foundFormat(selected_device);
+    QAudioFormat format = selected_device.preferredFormat();
+    format.setChannelCount(2);
+    format.setCodec("audio/pcm");
+    format.setSampleRate(ui->sampleRateComboBox->itemData(ui->sampleRateComboBox->currentIndex()).toInt());
+    format.setSampleSize(ui->sampleSizeComboBox->itemData(ui->sampleSizeComboBox->currentIndex()).toInt());
 
     qDebug() << "========== format infos ========== ";
     qDebug() << format;
@@ -294,7 +298,3 @@ QAudioFormat LockinGui::foundFormat(const QAudioDeviceInfo &device)
 
     return format;
 }
-
-
-
-

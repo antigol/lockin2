@@ -44,12 +44,14 @@ public:
     ~LockinGui();
 
 private slots:
-    void on_buttonStartStop_clicked();
     void on_dial_sliderMoved(int position);
     void on_checkBox_clicked(bool checked);
+    void on_audioDeviceSelector_currentIndexChanged(int arg1);
+    void on_buttonStartStop_clicked();
     void updateGraphs();
     void getValues(qreal time, qreal x, qreal y);
     void regraph();
+
 
 private:
     void startLockin();
