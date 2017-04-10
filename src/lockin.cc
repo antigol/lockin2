@@ -35,6 +35,7 @@ Lockin::Lockin(QObject *parent) :
 
     _audioInput = 0;
 
+    _invertLR = false;
     setOutputPeriod(0.5);
     setIntegrationTime(3.0);
     setPhase(0.0);
@@ -126,6 +127,11 @@ qreal Lockin::integrationTime() const
     return _integrationTime;
 }
 
+void Lockin::setInvertLR(bool on)
+{
+    _invertLR = on;
+}
+
 void Lockin::setPhase(qreal phase)
 {
     _phase = phase * M_PI/180.0;
@@ -139,12 +145,17 @@ qreal Lockin::phase() const
 qreal Lockin::autoPhase() const
 {
     Q_ASSERT(_audioInput != 0);
-	return (_phase + 0.1 * std::atan2(_yValue, _xValue)) * 180.0/M_PI;
+    return (_phase + 0.1 * std::atan2(_yValue, _xValue)) * 180.0/M_PI;
 }
 
-QVector<QPair<qreal, qreal>> &Lockin::raw_signals()
+const QVector<QPair<qreal, qreal>> &Lockin::raw_signals() const
 {
     return _left_right;
+}
+
+const QVector<QPair<qreal, qreal> > &Lockin::sin_cos_signals() const
+{
+    return _sin_cos;
 }
 
 const QAudioFormat &Lockin::format() const
@@ -187,7 +198,6 @@ void Lockin::interpretInput()
 
     // load audio channels and cast them in the interval (-1, 1)
     readSoudCard();
-	emit newRawData();
 
     if (_left_right.empty()) {
         qDebug() << __FUNCTION__ << ": empty channels";
@@ -195,10 +205,11 @@ void Lockin::interpretInput()
     }
 
 	parseChopperSignal();
+    emit newRawData();
 
     for (int i = 0; i < _left_right.size(); ++i) {
 		qreal x = _sin_cos[i].first * _left_right[i].first; // sin
-		qreal y = _sin_cos[i].second * _left_right[i].second; // cos
+        qreal y = _sin_cos[i].second * _left_right[i].first; // cos
 
         if (!std::isnan(x) && !std::isnan(y)) {
             _dataXY << QPair<qreal, qreal>(x, y);
@@ -265,12 +276,15 @@ void Lockin::readSoudCard()
     switch (_format.sampleSize()) {
     case 8:
         middle = 128;
+        Q_ASSERT(_fifo->bytesAvailable() % 2 == 0);
         break;
     case 16:
         middle = 32768;
+        Q_ASSERT((_fifo->bytesAvailable() / 2) % 2 == 0);
         break;
     case 32:
         middle = 2147483648;
+        Q_ASSERT((_fifo->bytesAvailable() / 4) % 2 == 0);
         break;
     }
 
@@ -295,6 +309,9 @@ void Lockin::readSoudCard()
             pair.first = _float;
             in >> _float;
             pair.second = _float;
+            if (_invertLR) {
+                std::swap(pair.first, pair.second);
+            }
             _left_right.append(pair);
             count++;
         }
@@ -307,6 +324,9 @@ void Lockin::readSoudCard()
                 pair.first = qreal(_int8) / middle;
                 in >> _int8;
                 pair.second = qreal(_int8) / middle;
+                if (_invertLR) {
+                    std::swap(pair.first, pair.second);
+                }
                 _left_right.append(pair);
                 count++;
             }
@@ -317,6 +337,9 @@ void Lockin::readSoudCard()
                 pair.first = qreal(_int16) / middle;
                 in >> _int16;
                 pair.second = qreal(_int16) / middle;
+                if (_invertLR) {
+                    std::swap(pair.first, pair.second);
+                }
                 _left_right.append(pair);
                 count++;
             }
@@ -327,6 +350,9 @@ void Lockin::readSoudCard()
                 pair.first = qreal(_int32) / middle;
                 in >> _int32;
                 pair.second = qreal(_int32) / middle;
+                if (_invertLR) {
+                    std::swap(pair.first, pair.second);
+                }
                 _left_right.append(pair);
                 count++;
             }
@@ -341,6 +367,9 @@ void Lockin::readSoudCard()
                 pair.first = (qreal(_uint8) / middle) - 1.0;
                 in >> _uint8;
                 pair.second = (qreal(_uint8) / middle) - 1.0;
+                if (_invertLR) {
+                    std::swap(pair.first, pair.second);
+                }
                 _left_right.append(pair);
                 count++;
             }
@@ -351,6 +380,9 @@ void Lockin::readSoudCard()
                 pair.first = (qreal(_uint16) / middle) - 1.0;
                 in >> _uint16;
                 pair.second = (qreal(_uint16) / middle) - 1.0;
+                if (_invertLR) {
+                    std::swap(pair.first, pair.second);
+                }
                 _left_right.append(pair);
                 count++;
             }
@@ -361,6 +393,9 @@ void Lockin::readSoudCard()
                 pair.first = (qreal(_uint32) / middle) - 1.0;
                 in >> _uint32;
                 pair.second = (qreal(_uint32) / middle) - 1.0;
+                if (_invertLR) {
+                    std::swap(pair.first, pair.second);
+                }
                 _left_right.append(pair);
                 count++;
             }

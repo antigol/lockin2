@@ -1,2 +1,0 @@
-- show sin cos
-

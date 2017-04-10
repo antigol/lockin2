@@ -40,6 +40,10 @@ LockinGui::LockinGui(QWidget *parent) :
     _lockin = new Lockin(this);
 
     foreach (const QAudioDeviceInfo &device, QAudioDeviceInfo::availableDevices(QAudio::AudioInput)) {
+        if (!device.deviceName().contains("alsa_input")) {
+            continue;
+        }
+
         QAudioFormat format = foundFormat(device);
 
         if (device.isFormatSupported(format) && _lockin->isFormatSupported(format)) {
@@ -78,6 +82,10 @@ LockinGui::LockinGui(QWidget *parent) :
 
     _vumeter_right_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::white), 1.5));
     _vumeter_right->addScatterplot(_vumeter_right_plot);
+    _vumeter_sin_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(QColor(200, 200, 255)), 1.5, Qt::DashLine));
+    _vumeter_right->addScatterplot(_vumeter_sin_plot);
+    _vumeter_cos_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(QColor(200, 255, 200)), 1.5, Qt::DashLine));
+    _vumeter_right->addScatterplot(_vumeter_cos_plot);
 
 
     _output = new XYScene(this);
@@ -130,16 +138,30 @@ void LockinGui::on_dial_sliderMoved(int position)
     _lockin->setPhase(qreal(position) / 10.0);
 }
 
+void LockinGui::on_checkBox_clicked(bool checked)
+{
+    _lockin->setInvertLR(checked);
+}
+
 void LockinGui::updateGraphs()
 {
     const QVector<QPair<qreal, qreal>> &data = _lockin->raw_signals();
+    const QVector<QPair<qreal, qreal>> &sin_cos = _lockin->sin_cos_signals();
     _vumeter_left_plot->clear();
     _vumeter_right_plot->clear();
+    _vumeter_sin_plot->clear();
+    _vumeter_cos_plot->clear();
     qreal msPerDot = 1000.0 / qreal(_lockin->format().sampleRate());
     for (int i = 0; i < qMin(data.size(), 2048); ++i) {
-        qreal t = i*msPerDot;
+        qreal t = qreal(i) * msPerDot;
         _vumeter_left_plot->append(QPointF(t, data[i].first));
         _vumeter_right_plot->append(QPointF(t, data[i].second));
+        if (!std::isnan(sin_cos[i].first)) {
+            _vumeter_sin_plot->append(QPointF(t, sin_cos[i].first));
+        }
+        if (!std::isnan(sin_cos[i].second)) {
+            _vumeter_cos_plot->append(QPointF(t, sin_cos[i].second));
+        }
     }
 
     if (!_regraph_timer.isActive()) {
@@ -272,5 +294,7 @@ QAudioFormat LockinGui::foundFormat(const QAudioDeviceInfo &device)
 
     return format;
 }
+
+
 
 

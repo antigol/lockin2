@@ -46,10 +46,10 @@ public:
 private slots:
     void on_buttonStartStop_clicked();
     void on_dial_sliderMoved(int position);
+    void on_checkBox_clicked(bool checked);
     void updateGraphs();
     void getValues(qreal time, qreal x, qreal y);
     void regraph();
-
 
 private:
     void startLockin();
@@ -68,6 +68,8 @@ private:
 
     XYScene *_vumeter_right;
     XYPointList *_vumeter_right_plot;
+    XYPointList *_vumeter_sin_plot;
+    XYPointList *_vumeter_cos_plot;
 
     XYScene *_output;
     XYPointList *_x_plot;

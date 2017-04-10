@@ -49,12 +49,14 @@ public:
     qreal outputPeriod() const;
     void setIntegrationTime(qreal integrationTime);
     qreal integrationTime() const;
+    void setInvertLR(bool on);
 
 
     void setPhase(qreal phase);
     qreal phase() const;
     qreal autoPhase() const;
-    QVector<QPair<qreal, qreal>> &raw_signals();
+    const QVector<QPair<qreal, qreal>> &raw_signals() const;
+    const QVector<QPair<qreal, qreal>> &sin_cos_signals() const;
     const QAudioFormat &format() const;
     void stop();
 
@@ -77,6 +79,7 @@ private:
 
     QAudioFormat _format; // don't change it during running
 
+    bool _invertLR;
     qreal _phase; // can be changed during running
     qreal _outputPeriod; // don't change it during running
     qreal _integrationTime; // don't change it during running

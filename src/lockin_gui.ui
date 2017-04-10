@@ -144,7 +144,21 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>Left : Signal</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="XYView" name="vumeter"/>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_5">
+         <property name="text">
+          <string>Right : Chopper</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="XYView" name="pll"/>
@@ -166,6 +180,13 @@
           </widget>
          </item>
         </layout>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="checkBox">
+         <property name="text">
+          <string>Invert Left/Right channels</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
