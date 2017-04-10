@@ -45,10 +45,11 @@ public:
 
 private slots:
     void on_buttonStartStop_clicked();
-    void on_buttonAutoPhase_clicked();
+    void on_dial_sliderMoved(int position);
     void updateGraphs();
     void getValues(qreal time, qreal x, qreal y);
     void regraph();
+
 
 private:
     void startLockin();

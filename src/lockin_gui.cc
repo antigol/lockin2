@@ -51,6 +51,7 @@ LockinGui::LockinGui(QWidget *parent) :
     ui->outputFrequency->setValue(set.value("outputFrequency", 1.0 / _lockin->outputPeriod()).toDouble());
     ui->integrationTime->setValue(set.value("integrationTime", _lockin->integrationTime()).toDouble());
     _lockin->setPhase(set.value("phase", 0).toDouble());
+    ui->dial->setValue(set.value("phase", 0).toDouble() * 10);
 
     connect(_lockin, SIGNAL(newRawData()), this, SLOT(updateGraphs()));
     connect(_lockin, SIGNAL(newValues(qreal,qreal,qreal)), this, SLOT(getValues(qreal,qreal,qreal)));
@@ -124,9 +125,9 @@ void LockinGui::on_buttonStartStop_clicked()
     }
 }
 
-void LockinGui::on_buttonAutoPhase_clicked()
+void LockinGui::on_dial_sliderMoved(int position)
 {
-    _lockin->setPhase(_lockin->autoPhase());
+    _lockin->setPhase(qreal(position) / 10.0);
 }
 
 void LockinGui::updateGraphs()
@@ -151,14 +152,11 @@ void LockinGui::getValues(qreal time, qreal x, qreal y)
     ui->lcdForXValue->display(x);
 
     QString str = QString::fromUtf8("phase = %1°\n"
-                                    "autophase = %2°\n"
-                                    "execution time = %3 (%4)\n"
-                                    "sample rate = %5 Hz\n"
-                                    "sample size = %6 bits");
+                                    "execution time = %2 (%3)\n"
+                                    "sample rate = %4 Hz\n"
+                                    "sample size = %5 bits");
 
     str = str.arg(_lockin->phase());
-    qreal d = _lockin->autoPhase() - _lockin->phase();
-    str = str.arg((d>0 ? "+":"")+QString::number(d));
     str = str.arg(QTime(0, 0).addMSecs(1000 * time).toString());
     str = str.arg(QTime(0, 0).addMSecs(_run_time.elapsed()).toString());
     str = str.arg(_lockin->format().sampleRate());
@@ -211,7 +209,6 @@ void LockinGui::startLockin()
         ui->buttonStartStop->setText("Stop !");
 
         QString str = QString::fromUtf8("phase = %1°\n"
-                                        "autophase = <none>\n"
                                         "execution time = <just started>\n"
                                         "sample rate = %2 Hz\n"
                                         "sample size = %3 bits");
@@ -221,8 +218,6 @@ void LockinGui::startLockin()
         str = str.arg(_lockin->format().sampleSize());
 
 		ui->info->setPlainText(str);
-
-        ui->buttonAutoPhase->setEnabled(true);
     } else {
         qDebug() << __FUNCTION__ << ": cannot start lockin";
         QMessageBox::warning(this, "Start lockin fail", "Start has failed.");
@@ -235,7 +230,6 @@ void LockinGui::stopLockin()
     ui->frame->setEnabled(true);
     ui->buttonStartStop->setText("Start");
 	ui->info->setPlainText("lockin stoped");
-    ui->buttonAutoPhase->setEnabled(false);
 }
 
 template <typename T>
@@ -269,4 +263,5 @@ QAudioFormat LockinGui::foundFormat(const QAudioDeviceInfo &device)
 
     return format;
 }
+
 
