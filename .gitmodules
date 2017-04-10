@@ -1,3 +1,3 @@
 [submodule "xygraph"]
 	path = xygraph
-	url = git@github.com:antigol/xygraph.git
+	url = https://github.com/antigol/xygraph.git
