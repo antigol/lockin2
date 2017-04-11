@@ -46,10 +46,10 @@ LockinGui::LockinGui(QWidget *parent) :
     }
 
     QSettings set;
-    ui->outputFrequency->setValue(set.value("outputFrequency", 1.0 / _lockin->outputPeriod()).toDouble());
-    ui->integrationTime->setValue(set.value("integrationTime", _lockin->integrationTime()).toDouble());
-    _lockin->setPhase(set.value("phase", 0).toDouble());
-    ui->dial->setValue(set.value("phase", 0).toDouble() * 10);
+    ui->outputFrequency->setValue(set.value(objectName() + "outputFrequency", 1.0 / _lockin->outputPeriod()).toDouble());
+    ui->integrationTime->setValue(set.value(objectName() + "integrationTime", _lockin->integrationTime()).toDouble());
+    _lockin->setPhase(set.value(objectName() + "phase", 0).toDouble());
+    ui->dial->setValue(set.value(objectName() + "phase", 0).toDouble() * 10);
 
     connect(_lockin, SIGNAL(newRawData()), this, SLOT(updateGraphs()));
     connect(_lockin, SIGNAL(newValues(qreal,qreal,qreal)), this, SLOT(getValues(qreal,qreal,qreal)));
@@ -102,9 +102,9 @@ LockinGui::LockinGui(QWidget *parent) :
 LockinGui::~LockinGui()
 {
     QSettings set;
-    set.setValue("outputFrequency", ui->outputFrequency->value());
-    set.setValue("integrationTime", ui->integrationTime->value());
-    set.setValue("phase", _lockin->phase());
+    set.setValue(objectName() + "outputFrequency", ui->outputFrequency->value());
+    set.setValue(objectName() + "integrationTime", ui->integrationTime->value());
+    set.setValue(objectName() + "phase", _lockin->phase());
 
     delete _vumeter_left;
     delete _vumeter_right;
