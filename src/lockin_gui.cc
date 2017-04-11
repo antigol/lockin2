@@ -60,7 +60,7 @@ LockinGui::LockinGui(QWidget *parent) :
     _vumeter_left->setSubaxesPen(QPen(QBrush(Qt::darkGray), 1, Qt::DashLine));
     _vumeter_left->setTextColor(Qt::gray);
     _vumeter_left->setZoom(0, 100, -1.1, 1.1);
-    ui->vumeter->setScene(_vumeter_left);
+    ui->left->setScene(_vumeter_left);
 
     _vumeter_left_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::white), 1.5));
     _vumeter_left->addScatterplot(_vumeter_left_plot);
@@ -72,14 +72,14 @@ LockinGui::LockinGui(QWidget *parent) :
     _vumeter_right->setSubaxesPen(QPen(QBrush(Qt::darkGray), 1, Qt::DashLine));
     _vumeter_right->setTextColor(Qt::gray);
     _vumeter_right->setZoom(0, 100, -1.1, 1.1);
-    ui->pll->setScene(_vumeter_right);
+    ui->right->setScene(_vumeter_right);
 
     _vumeter_right_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::white), 1.5));
-    _vumeter_right->addScatterplot(_vumeter_right_plot);
     _vumeter_sin_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(QColor(200, 200, 255)), 1.5, Qt::DashLine));
-    _vumeter_right->addScatterplot(_vumeter_sin_plot);
     _vumeter_cos_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(QColor(200, 255, 200)), 1.5, Qt::DashLine));
     _vumeter_right->addScatterplot(_vumeter_cos_plot);
+    _vumeter_right->addScatterplot(_vumeter_sin_plot);
+    _vumeter_right->addScatterplot(_vumeter_right_plot);
 
 
     _output = new XYScene(this);
@@ -90,9 +90,9 @@ LockinGui::LockinGui(QWidget *parent) :
     _output->setZoom(0.0, 15.0, -1.0, 1.0);
     ui->output->setScene(_output);
 
-    _y_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::darkGray), 1.5));
+    _y_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(QColor(200, 255, 200)), 1.5));
     _output->addScatterplot(_y_plot);
-    _x_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::white), 1.5));
+    _x_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(QColor(200, 200, 255)), 1.5));
     _output->addScatterplot(_x_plot);
 
     _regraph_timer.setSingleShot(true);
@@ -161,8 +161,17 @@ void LockinGui::updateGraphs()
     _vumeter_sin_plot->clear();
     _vumeter_cos_plot->clear();
     qreal msPerDot = 1000.0 / qreal(_lockin->format().sampleRate());
+
+    int trigger = 0;
     for (int i = 0; i < qMin(data.size(), 2048); ++i) {
-        qreal t = qreal(i) * msPerDot;
+        if (!std::isnan(sin_cos[i].first) && !std::isnan(sin_cos[i].second)) {
+            trigger = i;
+            break;
+        }
+    }
+
+    for (int i = 0; i < qMin(data.size(), 2048); ++i) {
+        qreal t = qreal(i - trigger) * msPerDot;
         _vumeter_left_plot->append(QPointF(t, data[i].first));
         _vumeter_right_plot->append(QPointF(t, data[i].second));
         if (!std::isnan(sin_cos[i].first)) {

@@ -149,6 +149,9 @@
        <property name="wrapping">
         <bool>true</bool>
        </property>
+       <property name="notchesVisible">
+        <bool>false</bool>
+       </property>
       </widget>
      </item>
     </layout>
@@ -171,7 +174,7 @@
         </widget>
        </item>
        <item>
-        <widget class="XYView" name="vumeter"/>
+        <widget class="XYView" name="left"/>
        </item>
        <item>
         <widget class="QLabel" name="label_5">
@@ -181,7 +184,7 @@
         </widget>
        </item>
        <item>
-        <widget class="XYView" name="pll"/>
+        <widget class="XYView" name="right"/>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
@@ -237,8 +240,8 @@
   <tabstop>integrationTime</tabstop>
   <tabstop>buttonStartStop</tabstop>
   <tabstop>tabWidget</tabstop>
-  <tabstop>vumeter</tabstop>
-  <tabstop>pll</tabstop>
+  <tabstop>left</tabstop>
+  <tabstop>right</tabstop>
   <tabstop>output</tabstop>
  </tabstops>
  <resources/>
