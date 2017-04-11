@@ -44,6 +44,7 @@ public:
     ~LockinGui();
 
     const QList<QPointF>& values() const;
+    const QTime& start_time() const;
 
 private slots:
     void on_dial_sliderMoved(int position);
@@ -67,6 +68,7 @@ private:
     Lockin *_lockin;
     QTime _run_time;
     QTimer _regraph_timer;
+    QTime _start_time;
 
     // Plots
     XYScene *_vumeter_left;

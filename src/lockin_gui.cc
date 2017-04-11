@@ -123,6 +123,11 @@ const QList<QPointF> &LockinGui::values() const
     return *_x_plot;
 }
 
+const QTime &LockinGui::start_time() const
+{
+    return _start_time;
+}
+
 void LockinGui::on_dial_sliderMoved(int position)
 {
     _lockin->setPhase(qreal(position) / 10.0);
@@ -250,6 +255,7 @@ void LockinGui::startLockin()
 
     if (_lockin->start(selected_device, format)) {
         _run_time.start();
+        _start_time = QTime::currentTime();
 
         _x_plot->clear();
         _y_plot->clear();
