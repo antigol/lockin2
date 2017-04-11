@@ -43,6 +43,8 @@ public:
     explicit LockinGui(QWidget *parent = 0);
     ~LockinGui();
 
+    const QList<QPointF>& values() const;
+
 private slots:
     void on_dial_sliderMoved(int position);
     void on_checkBox_clicked(bool checked);
@@ -52,6 +54,8 @@ private slots:
     void getValues(qreal time, qreal x, qreal y);
     void regraph();
 
+signals:
+    void newValues();
 
 private:
     void startLockin();

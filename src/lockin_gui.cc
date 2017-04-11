@@ -118,6 +118,11 @@ LockinGui::~LockinGui()
     delete ui;
 }
 
+const QList<QPointF> &LockinGui::values() const
+{
+    return *_x_plot;
+}
+
 void LockinGui::on_dial_sliderMoved(int position)
 {
     _lockin->setPhase(qreal(position) / 10.0);
@@ -213,6 +218,8 @@ void LockinGui::getValues(qreal time, qreal x, qreal y)
     if (zoom.xMin() < time && zoom.xMax() < time && zoom.xMax() > time * 0.9)
         zoom.setXMax(time + 0.20 * zoom.width());
     _output->setZoom(zoom);
+
+    emit newValues();
 }
 
 void LockinGui::regraph()
