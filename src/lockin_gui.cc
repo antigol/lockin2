@@ -199,20 +199,10 @@ void LockinGui::updateGraphs()
 
 void LockinGui::getValues(qreal time, qreal x, qreal y)
 {
-    ui->lcdForXValue->display(x);
-
-    QString str = QString::fromUtf8("phase = %1°\n"
-                                    "execution time = %2 (%3)\n"
-                                    "sample rate = %4 Hz\n"
-                                    "sample size = %5 bits");
-
-    str = str.arg(_lockin->phase());
-    str = str.arg(QTime(0, 0).addMSecs(1000 * time).toString());
-    str = str.arg(QTime(0, 0).addMSecs(_run_time.elapsed()).toString());
-    str = str.arg(_lockin->format().sampleRate());
-    str = str.arg(_lockin->format().sampleSize());
-
-	ui->info->setPlainText(str);
+    ui->label_phase->setText(QString::fromUtf8("%1°").arg(_lockin->phase()));
+    ui->label_current_value->setText(QString::number(x));
+    ui->label_current_time->setText(QTime(0, 0).addMSecs(1000 * time).toString());
+    ui->label_real_time->setText(QTime(0, 0).addMSecs(_run_time.elapsed()).toString());
 
     std::cout << time << " " << x << std::endl;
 
@@ -264,17 +254,6 @@ void LockinGui::startLockin()
 
         ui->frame->setEnabled(false);
         ui->buttonStartStop->setText("Stop !");
-
-        QString str = QString::fromUtf8("phase = %1°\n"
-                                        "execution time = <just started>\n"
-                                        "sample rate = %2 Hz\n"
-                                        "sample size = %3 bits");
-
-        str = str.arg(_lockin->phase());
-        str = str.arg(_lockin->format().sampleRate());
-        str = str.arg(_lockin->format().sampleSize());
-
-		ui->info->setPlainText(str);
     } else {
         qDebug() << __FUNCTION__ << ": cannot start lockin";
         QMessageBox::warning(this, "Start lockin fail", "Start has failed.");
@@ -286,7 +265,6 @@ void LockinGui::stopLockin()
     _lockin->stop();
     ui->frame->setEnabled(true);
     ui->buttonStartStop->setText("Start");
-	ui->info->setPlainText("lockin stoped");
 }
 
 template <typename T>
