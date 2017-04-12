@@ -128,9 +128,14 @@ const QTime &LockinGui::start_time() const
     return _start_time;
 }
 
-void LockinGui::on_dial_sliderMoved(int position)
+void LockinGui::on_dial_valueChanged(int value)
 {
-    _lockin->setPhase(qreal(position) / 10.0);
+    _lockin->setPhase(qreal(value) / 10.0);
+}
+
+void LockinGui::on_toolButton_clicked()
+{
+    ui->dial->setValue(10.0 * _lockin->autoPhase());
 }
 
 void LockinGui::on_checkBox_clicked(bool checked)
@@ -299,3 +304,6 @@ QAudioFormat LockinGui::foundFormat(const QAudioDeviceInfo &device)
 
     return format;
 }
+
+
+

@@ -47,13 +47,16 @@ public:
     const QTime& start_time() const;
 
 private slots:
-    void on_dial_sliderMoved(int position);
+    void on_dial_valueChanged(int value);
+    void on_toolButton_clicked();
     void on_checkBox_clicked(bool checked);
     void on_audioDeviceSelector_currentIndexChanged(int arg1);
     void on_buttonStartStop_clicked();
     void updateGraphs();
     void getValues(qreal time, qreal x, qreal y);
     void regraph();
+
+
 
 signals:
     void newValues();

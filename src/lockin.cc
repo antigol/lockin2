@@ -144,8 +144,8 @@ qreal Lockin::phase() const
 
 qreal Lockin::autoPhase() const
 {
-    Q_ASSERT(_audioInput != 0);
-    return (_phase + 0.1 * std::atan2(_yValue, _xValue)) * 180.0/M_PI;
+//    Q_ASSERT(_audioInput != 0);
+    return (_phase + std::atan2(_yValue, _xValue)) * 180.0/M_PI;
 }
 
 const QVector<QPair<qreal, qreal>> &Lockin::raw_signals() const
