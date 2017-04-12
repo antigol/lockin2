@@ -46,8 +46,8 @@ LockinGui::LockinGui(QWidget *parent) :
     }
 
     QSettings set;
-    ui->outputFrequency->setValue(set.value("outputFrequency", 1.0 / _lockin->outputPeriod()).toDouble());
-    ui->integrationTime->setValue(set.value("integrationTime", _lockin->integrationTime()).toDouble());
+    ui->outputPeriod->setValue(set.value("output period", _lockin->outputPeriod()).toDouble());
+    ui->integrationTime->setValue(set.value("integration time", _lockin->integrationTime()).toDouble());
     _lockin->setPhase(set.value("phase", 0).toDouble());
     ui->dial->setValue(set.value("phase", 0).toDouble() * 10);
 
@@ -102,8 +102,8 @@ LockinGui::LockinGui(QWidget *parent) :
 LockinGui::~LockinGui()
 {
     QSettings set;
-    set.setValue("outputFrequency", ui->outputFrequency->value());
-    set.setValue("integrationTime", ui->integrationTime->value());
+    set.setValue("output period", ui->outputPeriod->value());
+    set.setValue("integration time", ui->integrationTime->value());
     set.setValue("phase", _lockin->phase());
 
     delete _vumeter_left;
@@ -151,6 +151,7 @@ void LockinGui::on_audioDeviceSelector_currentIndexChanged(int arg1)
     foreach (int size, selected_device.supportedSampleSizes()) {
         ui->sampleSizeComboBox->addItem(QString::number(size), size);
     }
+    ui->sampleSizeComboBox->setCurrentIndex(ui->sampleSizeComboBox->count() - 1);
 }
 
 void LockinGui::on_buttonStartStop_clicked()
@@ -204,7 +205,7 @@ void LockinGui::getValues(qreal time, qreal x, qreal y)
     ui->label_current_time->setText(QTime(0, 0).addMSecs(1000 * time).toString());
     ui->label_real_time->setText(QTime(0, 0).addMSecs(_run_time.elapsed()).toString());
 
-    std::cout << time << " " << x << std::endl;
+//    std::cout << time << " " << x << std::endl;
 
     // output graph
     _x_plot->append(QPointF(time, x));
@@ -228,8 +229,8 @@ void LockinGui::startLockin()
 {
     QAudioDeviceInfo selected_device = ui->audioDeviceSelector->itemData(ui->audioDeviceSelector->currentIndex()).value<QAudioDeviceInfo>();
 
-    qDebug() << "========== device infos ========== ";
-    showQAudioDeviceInfo(selected_device);
+//    qDebug() << "========== device infos ========== ";
+//    showQAudioDeviceInfo(selected_device);
 
     QAudioFormat format = selected_device.preferredFormat();
     format.setChannelCount(2);
@@ -237,10 +238,10 @@ void LockinGui::startLockin()
     format.setSampleRate(ui->sampleRateComboBox->itemData(ui->sampleRateComboBox->currentIndex()).toInt());
     format.setSampleSize(ui->sampleSizeComboBox->itemData(ui->sampleSizeComboBox->currentIndex()).toInt());
 
-    qDebug() << "========== format infos ========== ";
+//    qDebug() << "========== format infos ========== ";
     qDebug() << format;
 
-    _lockin->setOutputPeriod(1.0 / ui->outputFrequency->value());
+    _lockin->setOutputPeriod(ui->outputPeriod->value());
     _lockin->setIntegrationTime(ui->integrationTime->value());
 
     if (_lockin->start(selected_device, format)) {

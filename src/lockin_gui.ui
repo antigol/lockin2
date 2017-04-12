@@ -36,30 +36,39 @@
       <item row="3" column="0">
        <widget class="QLabel" name="outputFrequencyHzLabel">
         <property name="text">
-         <string>Output frequency</string>
+         <string>Output period</string>
         </property>
        </widget>
       </item>
       <item row="3" column="1">
-       <widget class="QDoubleSpinBox" name="outputFrequency">
+       <widget class="QDoubleSpinBox" name="outputPeriod">
         <property name="suffix">
-         <string> [Hz]</string>
-        </property>
-        <property name="maximum">
-         <double>20.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1">
-       <widget class="QDoubleSpinBox" name="integrationTime">
-        <property name="suffix">
-         <string> [s]</string>
+         <string> [sec]</string>
         </property>
         <property name="maximum">
          <double>100.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QDoubleSpinBox" name="integrationTime">
+        <property name="suffix">
+         <string> [sec]</string>
+        </property>
+        <property name="maximum">
+         <double>100.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -266,7 +275,7 @@
  </customwidgets>
  <tabstops>
   <tabstop>audioDeviceSelector</tabstop>
-  <tabstop>outputFrequency</tabstop>
+  <tabstop>outputPeriod</tabstop>
   <tabstop>integrationTime</tabstop>
   <tabstop>buttonStartStop</tabstop>
   <tabstop>tabWidget</tabstop>

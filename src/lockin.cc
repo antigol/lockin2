@@ -248,25 +248,26 @@ void Lockin::interpretInput()
     static int total_calls = 0;
     total_time += time.elapsed();
     total_calls += 1;
-    qDebug() << __FUNCTION__ << ": execution time " << (total_time / total_calls) << "ms";
+//    qDebug() << __FUNCTION__ << ": execution time " << (total_time / total_calls) << "ms";
 }
 
 void Lockin::audioStateChanged(QAudio::State state)
 {
-    switch (state) {
-    case QAudio::ActiveState:
-        qDebug() << __FUNCTION__ << ": ActiveState";
-        break;
-    case QAudio::SuspendedState:
-        qDebug() << __FUNCTION__ << ": SuspendedState";
-        break;
-    case QAudio::StoppedState:
-        qDebug() << __FUNCTION__ << ": StoppedState";
-        break;
-    case QAudio::IdleState:
-        qDebug() << __FUNCTION__ << ": IdleState";
-        break;
-    }
+    Q_UNUSED(state);
+//    switch (state) {
+//    case QAudio::ActiveState:
+//        qDebug() << __FUNCTION__ << ": ActiveState";
+//        break;
+//    case QAudio::SuspendedState:
+//        qDebug() << __FUNCTION__ << ": SuspendedState";
+//        break;
+//    case QAudio::StoppedState:
+//        qDebug() << __FUNCTION__ << ": StoppedState";
+//        break;
+//    case QAudio::IdleState:
+//        qDebug() << __FUNCTION__ << ": IdleState";
+//        break;
+//    }
 }
 
 void Lockin::readSoudCard()
