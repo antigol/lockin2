@@ -47,7 +47,6 @@ public:
     const QTime& start_time() const;
 
 private slots:
-    void on_dial_valueChanged(int value);
     void on_toolButton_clicked();
     void on_checkBox_clicked(bool checked);
     void on_audioDeviceSelector_currentIndexChanged(int arg1);

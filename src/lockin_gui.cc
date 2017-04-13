@@ -49,7 +49,6 @@ LockinGui::LockinGui(QWidget *parent) :
     ui->outputPeriod->setValue(set.value("output period", _lockin->outputPeriod()).toDouble());
     ui->integrationTime->setValue(set.value("integration time", _lockin->integrationTime()).toDouble());
     _lockin->setPhase(set.value("phase", 0).toDouble());
-    ui->dial->setValue(set.value("phase", 0).toDouble() * 10);
 
     connect(_lockin, SIGNAL(newRawData()), this, SLOT(updateGraphs()));
     connect(_lockin, SIGNAL(newValues(qreal,qreal,qreal)), this, SLOT(getValues(qreal,qreal,qreal)));
@@ -128,14 +127,9 @@ const QTime &LockinGui::start_time() const
     return _start_time;
 }
 
-void LockinGui::on_dial_valueChanged(int value)
-{
-    _lockin->setPhase(qreal(value) / 10.0);
-}
-
 void LockinGui::on_toolButton_clicked()
 {
-    ui->dial->setValue(10.0 * _lockin->autoPhase());
+    _lockin->setPhase(_lockin->autoPhase());
 }
 
 void LockinGui::on_checkBox_clicked(bool checked)
