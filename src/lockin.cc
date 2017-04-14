@@ -33,12 +33,11 @@ Lockin::Lockin(QObject *parent) :
     _fifo = new Fifo(this);
     _fifo->open(QIODevice::ReadWrite);
 
-    _audioInput = 0;
+    _audioInput = nullptr;
 
     _invertLR = false;
     setOutputPeriod(0.5);
     setIntegrationTime(3.0);
-    setPhase(0.0);
 }
 
 Lockin::~Lockin()
@@ -49,7 +48,7 @@ Lockin::~Lockin()
 
 bool Lockin::isRunning() const
 {
-    return (_audioInput != 0);
+    return _audioInput != nullptr;
 }
 
 bool Lockin::isFormatSupported(const QAudioFormat &format)
@@ -86,7 +85,6 @@ bool Lockin::start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &form
     _audioInput->setNotifyInterval(_outputPeriod * 1000.0);
 
     connect(_audioInput, SIGNAL(notify()), this, SLOT(interpretInput()));
-    connect(_audioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioStateChanged(QAudio::State)));
 
     // pour être au millieu avec le temps
     _timeValue = -(_integrationTime / 2.0);
@@ -96,7 +94,7 @@ bool Lockin::start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &form
 
     // nettoyage des variables
     _fifo->readAll(); // vide le fifo
-    _dataXY.clear(); // vide <x,y>
+    _measures.clear(); // vide <x,y>
 
     _format = format;
 
@@ -132,30 +130,14 @@ void Lockin::setInvertLR(bool on)
     _invertLR = on;
 }
 
-void Lockin::setPhase(qreal phase)
-{
-    _phase = phase * M_PI/180.0;
-}
-
-qreal Lockin::phase() const
-{
-    return _phase * 180.0/M_PI;
-}
-
-qreal Lockin::autoPhase() const
-{
-//    Q_ASSERT(_audioInput != 0);
-    return (_phase + std::atan2(_yValue, _xValue)) * 180.0/M_PI;
-}
-
 const QVector<QPair<qreal, qreal>> &Lockin::raw_signals() const
 {
     return _left_right;
 }
 
-const QVector<QPair<qreal, qreal> > &Lockin::sin_cos_signals() const
+const QVector<std::complex<qreal> > &Lockin::complex_exp_signal() const
 {
-    return _sin_cos;
+    return _complex_exp;
 }
 
 const QAudioFormat &Lockin::format() const
@@ -165,10 +147,10 @@ const QAudioFormat &Lockin::format() const
 
 void Lockin::stop()
 {
-    if (_audioInput != 0) {
+    if (_audioInput != nullptr) {
         _audioInput->stop();
         delete _audioInput;
-        _audioInput = 0;
+        _audioInput = nullptr;
     } else {
         qDebug() << __FUNCTION__ << ": lockin is not running";
     }
@@ -208,66 +190,37 @@ void Lockin::interpretInput()
     emit newRawData();
 
     for (int i = 0; i < _left_right.size(); ++i) {
-		qreal x = _sin_cos[i].first * _left_right[i].first; // sin
-        qreal y = _sin_cos[i].second * _left_right[i].first; // cos
+        std::complex<qreal> x = _complex_exp[i] * _left_right[i].first;
 
-        if (!std::isnan(x) && !std::isnan(y)) {
-            _dataXY << QPair<qreal, qreal>(x, y);
+        if (!std::isnan(x.real()) && !std::isnan(x.imag())) {
+            _measures << x;
         }
     }
 
     // stop if there is not enough values into data xy
-    if (_dataXY.size() < _sampleIntegration) {
-        emit info("need more data for the integration time");
+    if (_measures.size() < _sampleIntegration) {
         return;
     }
 
     // remove the old unneeded values
-    while (_dataXY.size() > _sampleIntegration)
-        _dataXY.removeFirst();
+    while (_measures.size() > _sampleIntegration)
+        _measures.removeFirst();
 
-    qreal x = 0.0;
-    qreal y = 0.0;
+    std::complex<qreal> x = 0.0;
 
-    for (int i = 0; i < _dataXY.size(); ++i) {
-        x += _dataXY[i].first;
-        y += _dataXY[i].second;
+    for (int i = 0; i < _measures.size(); ++i) {
+        x += _measures[i];
     }
 
     x /= qreal(_sampleIntegration);
-    y /= qreal(_sampleIntegration);
 
-    _xValue = x;
-    _yValue = y;
-
-
-	emit newValues(_timeValue, x, y);
-
+    emit newValue(_timeValue, std::abs(x));
 
 	static qreal total_time = 0.0;
     static int total_calls = 0;
     total_time += time.elapsed();
     total_calls += 1;
 //    qDebug() << __FUNCTION__ << ": execution time " << (total_time / total_calls) << "ms";
-}
-
-void Lockin::audioStateChanged(QAudio::State state)
-{
-    Q_UNUSED(state);
-//    switch (state) {
-//    case QAudio::ActiveState:
-//        qDebug() << __FUNCTION__ << ": ActiveState";
-//        break;
-//    case QAudio::SuspendedState:
-//        qDebug() << __FUNCTION__ << ": SuspendedState";
-//        break;
-//    case QAudio::StoppedState:
-//        qDebug() << __FUNCTION__ << ": StoppedState";
-//        break;
-//    case QAudio::IdleState:
-//        qDebug() << __FUNCTION__ << ": IdleState";
-//        break;
-//    }
 }
 
 void Lockin::readSoudCard()
@@ -414,14 +367,12 @@ void Lockin::readSoudCard()
 
 void Lockin::parseChopperSignal()
 {
-    const QPair<qreal, qreal> ignoredValue(NAN, NAN);
-
-	_sin_cos.clear();
+    _complex_exp.clear();
 
     int i = 0;
 
     // set the first value as ignored
-	_sin_cos << ignoredValue;
+    _complex_exp << NAN;
     i++;
 
     for (; i < _left_right.size(); ++i) {
@@ -429,7 +380,7 @@ void Lockin::parseChopperSignal()
             // first rising edge
             break;
         }
-		_sin_cos << ignoredValue;
+        _complex_exp << NAN;
     }
 
     int periodSize = 0;
@@ -439,8 +390,8 @@ void Lockin::parseChopperSignal()
             // rising edge
 
             for (int j = 0; j < periodSize; ++j) {
-				qreal angle = 2.0 * M_PI * (qreal(j) / qreal(periodSize)) + _phase;
-				_sin_cos << QPair<qreal, qreal>(std::sin(angle), std::cos(angle));
+                qreal angle = 2.0 * M_PI * qreal(j) / qreal(periodSize);
+                _complex_exp << std::exp(std::complex<qreal>(0.0, 1.0) * angle);
             }
 
             periodSize = 0;
@@ -448,8 +399,8 @@ void Lockin::parseChopperSignal()
     }
 
     for (int j = 0; j < periodSize; ++j) {
-		_sin_cos << ignoredValue;
+        _complex_exp << NAN;
     }
 
-	Q_ASSERT(_sin_cos.size() == _left_right.size());
+    Q_ASSERT(_complex_exp.size() == _left_right.size());
 }

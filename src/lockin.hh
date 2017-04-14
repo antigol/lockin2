@@ -31,6 +31,7 @@
 #include <QPair>
 #include <QMutex>
 #include <QVector>
+#include <complex>
 
 class Fifo;
 
@@ -51,27 +52,21 @@ public:
     qreal integrationTime() const;
     void setInvertLR(bool on);
 
-
-    void setPhase(qreal phase);
-    qreal phase() const;
-    qreal autoPhase() const;
     const QVector<QPair<qreal, qreal>> &raw_signals() const;
-    const QVector<QPair<qreal, qreal>> &sin_cos_signals() const;
+    const QVector<std::complex<qreal> > &complex_exp_signal() const;
     const QAudioFormat &format() const;
     void stop();
 
 signals:
     void newRawData();
-    void newValues(qreal time, qreal x, qreal y);
-    void info(QString msg);
+    void newValue(qreal time, qreal measure);
 
 private slots:
     void interpretInput();
-    void audioStateChanged(QAudio::State state);
 
 private:
 	void readSoudCard(); // write into _left_right
-	void parseChopperSignal(); // write into _sin_cos
+    void parseChopperSignal(); // write into _complex_exp
 
 
     QAudioInput *_audioInput; // is null when lockin stoped
@@ -80,18 +75,15 @@ private:
     QAudioFormat _format; // don't change it during running
 
     bool _invertLR;
-    qreal _phase; // can be changed during running
     qreal _outputPeriod; // don't change it during running
     qreal _integrationTime; // don't change it during running
     int _sampleIntegration; // don't change it during running
 
     QVector<QPair<qreal, qreal>> _left_right; // raw signal
-	QVector<QPair<qreal, qreal>> _sin_cos; // sin/cos constructed from right signal
-    QList<QPair<qreal, qreal>> _dataXY; // product of left signal with sin/cos
+    QVector<std::complex<qreal>> _complex_exp; // sin/cos constructed from right signal
+    QList<std::complex<qreal>> _measures; // product of left signal with sin/cos
 
     qreal _timeValue;
-    qreal _xValue;
-    qreal _yValue;
 };
 
 #endif // LOCKIN_HPP

@@ -48,10 +48,9 @@ LockinGui::LockinGui(QWidget *parent) :
     QSettings set;
     ui->outputPeriod->setValue(set.value("output period", _lockin->outputPeriod()).toDouble());
     ui->integrationTime->setValue(set.value("integration time", _lockin->integrationTime()).toDouble());
-    _lockin->setPhase(set.value("phase", 0).toDouble());
 
     connect(_lockin, SIGNAL(newRawData()), this, SLOT(updateGraphs()));
-    connect(_lockin, SIGNAL(newValues(qreal,qreal,qreal)), this, SLOT(getValues(qreal,qreal,qreal)));
+    connect(_lockin, SIGNAL(newValue(qreal,qreal)), this, SLOT(getValue(qreal,qreal)));
 
     _vumeter_left = new XYScene(this);
     _vumeter_left->setBackgroundBrush(QBrush(Qt::black));
@@ -74,9 +73,7 @@ LockinGui::LockinGui(QWidget *parent) :
     ui->right->setScene(_vumeter_right);
 
     _vumeter_right_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::white), 1.5));
-    _vumeter_sin_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(QColor(200, 200, 255)), 1.5, Qt::DashLine));
-    _vumeter_cos_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(QColor(200, 255, 200)), 1.5, Qt::DashLine));
-    _vumeter_right->addScatterplot(_vumeter_cos_plot);
+    _vumeter_sin_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::gray), 1., Qt::DashLine));
     _vumeter_right->addScatterplot(_vumeter_sin_plot);
     _vumeter_right->addScatterplot(_vumeter_right_plot);
 
@@ -89,10 +86,8 @@ LockinGui::LockinGui(QWidget *parent) :
     _output->setZoom(0.0, 15.0, -1.0, 1.0);
     ui->output->setScene(_output);
 
-    _y_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(QColor(200, 255, 200)), 1.5));
-    _output->addScatterplot(_y_plot);
-    _x_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(QColor(200, 200, 255)), 1.5));
-    _output->addScatterplot(_x_plot);
+    _measures_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::white), 1.5));
+    _output->addScatterplot(_measures_plot);
 
     _regraph_timer.setSingleShot(true);
     connect(&_regraph_timer, SIGNAL(timeout()), this, SLOT(regraph()));
@@ -103,7 +98,6 @@ LockinGui::~LockinGui()
     QSettings set;
     set.setValue("output period", ui->outputPeriod->value());
     set.setValue("integration time", ui->integrationTime->value());
-    set.setValue("phase", _lockin->phase());
 
     delete _vumeter_left;
     delete _vumeter_right;
@@ -111,25 +105,19 @@ LockinGui::~LockinGui()
 
     delete _vumeter_left_plot;
     delete _vumeter_right_plot;
-    delete _x_plot;
-    delete _y_plot;
+    delete _measures_plot;
 
     delete ui;
 }
 
 const QList<QPointF> &LockinGui::values() const
 {
-    return *_x_plot;
+    return *_measures_plot;
 }
 
 const QTime &LockinGui::start_time() const
 {
     return _start_time;
-}
-
-void LockinGui::on_toolButton_clicked()
-{
-    _lockin->setPhase(_lockin->autoPhase());
 }
 
 void LockinGui::on_checkBox_clicked(bool checked)
@@ -165,16 +153,15 @@ void LockinGui::on_buttonStartStop_clicked()
 void LockinGui::updateGraphs()
 {
     const QVector<QPair<qreal, qreal>> &data = _lockin->raw_signals();
-    const QVector<QPair<qreal, qreal>> &sin_cos = _lockin->sin_cos_signals();
+    const QVector<std::complex<qreal>> &sin_cos = _lockin->complex_exp_signal();
     _vumeter_left_plot->clear();
     _vumeter_right_plot->clear();
     _vumeter_sin_plot->clear();
-    _vumeter_cos_plot->clear();
     qreal msPerDot = 1000.0 / qreal(_lockin->format().sampleRate());
 
     int trigger = 0;
     for (int i = 0; i < qMin(data.size(), 2048); ++i) {
-        if (!std::isnan(sin_cos[i].first) && !std::isnan(sin_cos[i].second)) {
+        if (!std::isnan(sin_cos[i].real()) && !std::isnan(sin_cos[i].imag())) {
             trigger = i;
             break;
         }
@@ -184,11 +171,8 @@ void LockinGui::updateGraphs()
         qreal t = qreal(i - trigger) * msPerDot;
         _vumeter_left_plot->append(QPointF(t, data[i].first));
         _vumeter_right_plot->append(QPointF(t, data[i].second));
-        if (!std::isnan(sin_cos[i].first)) {
-            _vumeter_sin_plot->append(QPointF(t, sin_cos[i].first));
-        }
-        if (!std::isnan(sin_cos[i].second)) {
-            _vumeter_cos_plot->append(QPointF(t, sin_cos[i].second));
+        if (!std::isnan(sin_cos[i].real())) {
+            _vumeter_sin_plot->append(QPointF(t, sin_cos[i].imag()));
         }
     }
 
@@ -197,24 +181,21 @@ void LockinGui::updateGraphs()
     }
 }
 
-void LockinGui::getValues(qreal time, qreal x, qreal y)
+void LockinGui::getValue(qreal time, qreal measure)
 {
-    ui->label_phase->setText(QString::fromUtf8("%1°").arg(_lockin->phase()));
-    ui->label_current_value->setText(QString::number(x));
+    ui->label_current_value->setText(QString::number(measure));
     ui->label_current_time->setText(QTime(0, 0).addMSecs(1000 * time).toString());
     ui->label_real_time->setText(QTime(0, 0).addMSecs(_run_time.elapsed()).toString());
 
-//    std::cout << time << " " << x << std::endl;
-
     // output graph
-    _x_plot->append(QPointF(time, x));
-    _y_plot->append(QPointF(time, y));
+    _measures_plot->append(QPointF(time, measure));
+
     RealZoom zoom = _output->zoom();
     if (zoom.xMin() < time && zoom.xMax() < time && zoom.xMax() > time * 0.9)
         zoom.setXMax(time + 0.20 * zoom.width());
     _output->setZoom(zoom);
 
-    emit newValues();
+    emit newValue();
 }
 
 void LockinGui::regraph()
@@ -247,8 +228,7 @@ void LockinGui::startLockin()
         _run_time.start();
         _start_time = QTime::currentTime();
 
-        _x_plot->clear();
-        _y_plot->clear();
+        _measures_plot->clear();
         _vumeter_left_plot->clear();
         _vumeter_right_plot->clear();
 
@@ -274,29 +254,6 @@ T maxInList(const QList<T> &list, T def)
     for (int i = 0; i < list.size(); ++i)
         max = qMax(max, list[i]);
     return max;
-}
-
-QAudioFormat LockinGui::foundFormat(const QAudioDeviceInfo &device)
-{
-    QAudioFormat format = device.preferredFormat();
-    format.setChannelCount(2);
-    format.setCodec("audio/pcm");
-
-    //    format.setSampleRate(maxInList(device.supportedSampleRates(), format.sampleRate()));
-    // If the sample rate is too high, the lockin takes late
-    format.setSampleRate(11025);
-
-    format.setSampleSize(maxInList(device.supportedSampleSizes(), format.sampleSize()));
-
-    if (!device.isFormatSupported(format)) {
-        format = device.nearestFormat(format);
-
-        // Required values
-        format.setChannelCount(2);
-        format.setCodec("audio/pcm");
-    }
-
-    return format;
 }
 
 

@@ -47,23 +47,19 @@ public:
     const QTime& start_time() const;
 
 private slots:
-    void on_toolButton_clicked();
     void on_checkBox_clicked(bool checked);
     void on_audioDeviceSelector_currentIndexChanged(int arg1);
     void on_buttonStartStop_clicked();
     void updateGraphs();
-    void getValues(qreal time, qreal x, qreal y);
+    void getValue(qreal time, qreal measure);
     void regraph();
 
-
-
 signals:
-    void newValues();
+    void newValue();
 
 private:
     void startLockin();
     void stopLockin();
-    QAudioFormat foundFormat(const QAudioDeviceInfo &device);
 
     Ui::LockinGui *ui;
 
@@ -79,11 +75,9 @@ private:
     XYScene *_vumeter_right;
     XYPointList *_vumeter_right_plot;
     XYPointList *_vumeter_sin_plot;
-    XYPointList *_vumeter_cos_plot;
 
     XYScene *_output;
-    XYPointList *_x_plot;
-    XYPointList *_y_plot;
+    XYPointList *_measures_plot;
 };
 
 #endif // LOCKINGUI_HPP
