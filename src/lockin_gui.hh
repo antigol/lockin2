@@ -28,8 +28,7 @@
 #include <QTime>
 #include <QTimer>
 #include "lockin.hh"
-#include "xygraph/xyscene.hh"
-#include "xygraph/xyview.hh"
+#include "xygraph/xygraph.hh"
 
 namespace Ui {
 class LockinGui;
@@ -69,15 +68,12 @@ private:
     QTime _start_time;
 
     // Plots
-    XYScene *_vumeter_left;
-    XYPointList *_vumeter_left_plot;
+    XY::PointList _vumeter_left_plot;
 
-    XYScene *_vumeter_right;
-    XYPointList *_vumeter_right_plot;
-    XYPointList *_vumeter_sin_plot;
+    XY::PointList _vumeter_right_plot;
+    XY::PointList _vumeter_sin_plot;
 
-    XYScene *_output;
-    XYPointList *_measures_plot;
+    XY::PointList _measures_plot;
 };
 
 #endif // LOCKINGUI_HPP

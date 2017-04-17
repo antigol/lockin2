@@ -9,16 +9,14 @@ TARGET = lockin
 DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += src/main.cc \
-    xygraph/xyscene.cc \
-    xygraph/xyview.cc \
+    xygraph/xygraph.cc \
     src/fifo.cc \
     src/lockin_gui.cc \
     src/lockin.cc \
     src/audioutils.cc
 
 HEADERS += \
-    xygraph/xyscene.hh \
-    xygraph/xyview.hh \
+    xygraph/xygraph.hh \
     src/fifo.hh \
     src/lockin_gui.hh \
     src/lockin.hh \

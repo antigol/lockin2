@@ -52,42 +52,39 @@ LockinGui::LockinGui(QWidget *parent) :
     connect(_lockin, SIGNAL(newRawData()), this, SLOT(updateGraphs()));
     connect(_lockin, SIGNAL(newValue(qreal,qreal)), this, SLOT(getValue(qreal,qreal)));
 
-    _vumeter_left = new XYScene(this);
-    _vumeter_left->setBackgroundBrush(QBrush(Qt::black));
-    _vumeter_left->setAxesPen(QPen(Qt::lightGray));
-    _vumeter_left->setSubaxesPen(QPen(QBrush(Qt::darkGray), 1, Qt::DashLine));
-    _vumeter_left->setTextColor(Qt::gray);
-    _vumeter_left->setZoom(0, 100, -1.1, 1.1);
-    ui->left->setScene(_vumeter_left);
+    ui->left->backgroundBrush = QBrush(Qt::black);
+    ui->left->axesPen = QPen(Qt::lightGray);
+    ui->left->subaxesPen = QPen(QBrush(Qt::darkGray), 1, Qt::DashLine);
+    ui->left->textPen = QPen(Qt::gray);
+    ui->left->setZoom(0, 100, -1.1, 1.1);
 
-    _vumeter_left_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::white), 1.5));
-    _vumeter_left->addScatterplot(_vumeter_left_plot);
-
-
-    _vumeter_right = new XYScene(this);
-    _vumeter_right->setBackgroundBrush(QBrush(Qt::black));
-    _vumeter_right->setAxesPen(QPen(Qt::lightGray));
-    _vumeter_right->setSubaxesPen(QPen(QBrush(Qt::darkGray), 1, Qt::DashLine));
-    _vumeter_right->setTextColor(Qt::gray);
-    _vumeter_right->setZoom(0, 100, -1.1, 1.1);
-    ui->right->setScene(_vumeter_right);
-
-    _vumeter_right_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::white), 1.5));
-    _vumeter_sin_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::gray), 1., Qt::DashLine));
-    _vumeter_right->addScatterplot(_vumeter_sin_plot);
-    _vumeter_right->addScatterplot(_vumeter_right_plot);
+    _vumeter_left_plot.linePen = QPen(QBrush(Qt::white), 1.5);
+    _vumeter_left_plot.dotRadius = 0.0;
+    ui->left->addPointList(&_vumeter_left_plot);
 
 
-    _output = new XYScene(this);
-    _output->setBackgroundBrush(QBrush(Qt::black));
-    _output->setAxesPen(QPen(Qt::lightGray));
-    _output->setSubaxesPen(QPen(QBrush(Qt::darkGray), 1, Qt::DashLine));
-    _output->setTextColor(Qt::gray);
-    _output->setZoom(0.0, 15.0, -1.0, 1.0);
-    ui->output->setScene(_output);
+    ui->right->backgroundBrush = QBrush(Qt::black);
+    ui->right->axesPen = QPen(Qt::lightGray);
+    ui->right->subaxesPen = QPen(QBrush(Qt::darkGray), 1, Qt::DashLine);
+    ui->right->textPen = QPen(Qt::gray);
+    ui->right->setZoom(0, 100, -1.1, 1.1);
 
-    _measures_plot = new XYPointList(QPen(Qt::NoPen), QBrush(Qt::NoBrush), 0.0, QPen(QBrush(Qt::white), 1.5));
-    _output->addScatterplot(_measures_plot);
+    _vumeter_right_plot.linePen = QPen(QBrush(Qt::white), 1.5);
+    _vumeter_right_plot.dotRadius = 0.0;
+    _vumeter_sin_plot.linePen = QPen(QBrush(Qt::gray), 1., Qt::DashLine);
+    _vumeter_sin_plot.dotRadius = 0.0;
+    ui->right->addPointList(&_vumeter_right_plot);
+    ui->right->addPointList(&_vumeter_sin_plot);
+
+    ui->output->backgroundBrush = QBrush(Qt::black);
+    ui->output->axesPen = QPen(Qt::lightGray);
+    ui->output->subaxesPen = QPen(QBrush(Qt::darkGray), 1, Qt::DashLine);
+    ui->output->textPen = QPen(Qt::gray);
+    ui->output->setZoom(0.0, 15.0, -1.0, 1.0);
+
+    _measures_plot.linePen = QPen(QBrush(Qt::white), 1.5);
+    _measures_plot.dotRadius = 0.0;
+    ui->output->addPointList(&_measures_plot);
 
     _regraph_timer.setSingleShot(true);
     connect(&_regraph_timer, SIGNAL(timeout()), this, SLOT(regraph()));
@@ -99,20 +96,12 @@ LockinGui::~LockinGui()
     set.setValue("output period", ui->outputPeriod->value());
     set.setValue("integration time", ui->integrationTime->value());
 
-    delete _vumeter_left;
-    delete _vumeter_right;
-    delete _output;
-
-    delete _vumeter_left_plot;
-    delete _vumeter_right_plot;
-    delete _measures_plot;
-
     delete ui;
 }
 
 const QList<QPointF> &LockinGui::values() const
 {
-    return *_measures_plot;
+    return _measures_plot;
 }
 
 const QTime &LockinGui::start_time() const
@@ -154,9 +143,9 @@ void LockinGui::updateGraphs()
 {
     const QVector<QPair<qreal, qreal>> &data = _lockin->raw_signals();
     const QVector<std::complex<qreal>> &sin_cos = _lockin->complex_exp_signal();
-    _vumeter_left_plot->clear();
-    _vumeter_right_plot->clear();
-    _vumeter_sin_plot->clear();
+    _vumeter_left_plot.clear();
+    _vumeter_right_plot.clear();
+    _vumeter_sin_plot.clear();
     qreal msPerDot = 1000.0 / qreal(_lockin->format().sampleRate());
 
     int trigger = 0;
@@ -169,10 +158,10 @@ void LockinGui::updateGraphs()
 
     for (int i = 0; i < qMin(data.size(), 2048); ++i) {
         qreal t = qreal(i - trigger) * msPerDot;
-        _vumeter_left_plot->append(QPointF(t, data[i].first));
-        _vumeter_right_plot->append(QPointF(t, data[i].second));
+        _vumeter_left_plot.append(QPointF(t, data[i].first));
+        _vumeter_right_plot.append(QPointF(t, data[i].second));
         if (!std::isnan(sin_cos[i].real())) {
-            _vumeter_sin_plot->append(QPointF(t, sin_cos[i].imag()));
+            _vumeter_sin_plot.append(QPointF(t, sin_cos[i].imag()));
         }
     }
 
@@ -188,21 +177,19 @@ void LockinGui::getValue(qreal time, qreal measure)
     ui->label_real_time->setText(QTime(0, 0).addMSecs(_run_time.elapsed()).toString());
 
     // output graph
-    _measures_plot->append(QPointF(time, measure));
+    _measures_plot.append(QPointF(time, measure));
 
-    RealZoom zoom = _output->zoom();
-    if (zoom.xMin() < time && zoom.xMax() < time && zoom.xMax() > time * 0.9)
-        zoom.setXMax(time + 0.20 * zoom.width());
-    _output->setZoom(zoom);
+    if (ui->output->xmin() < time && ui->output->xmax() < time && ui->output->xmax() > time * 0.9)
+        ui->output->setZoom(ui->output->xmin(), time + 0.20 * (ui->output->xmax() - ui->output->xmin()), ui->output->ymin(), ui->output->ymax());
 
     emit newValue();
 }
 
 void LockinGui::regraph()
 {
-    _vumeter_left->regraph();
-    _vumeter_right->regraph();
-    _output->regraph();
+    ui->left->update();
+    ui->right->update();
+    ui->output->update();
 }
 
 void LockinGui::startLockin()
@@ -228,9 +215,9 @@ void LockinGui::startLockin()
         _run_time.start();
         _start_time = QTime::currentTime();
 
-        _measures_plot->clear();
-        _vumeter_left_plot->clear();
-        _vumeter_right_plot->clear();
+        _measures_plot.clear();
+        _vumeter_left_plot.clear();
+        _vumeter_right_plot.clear();
 
         ui->frame->setEnabled(false);
         ui->buttonStartStop->setText("Stop !");

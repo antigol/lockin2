@@ -240,7 +240,7 @@
            <number>0</number>
           </property>
           <item>
-           <widget class="XYView" name="left"/>
+           <widget class="XY::Graph" name="left"/>
           </item>
          </layout>
         </widget>
@@ -264,7 +264,7 @@
            <number>0</number>
           </property>
           <item>
-           <widget class="XYView" name="right"/>
+           <widget class="XY::Graph" name="right"/>
           </item>
          </layout>
         </widget>
@@ -307,7 +307,7 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="XYView" name="output"/>
+        <widget class="XY::Graph" name="output"/>
        </item>
       </layout>
      </widget>
@@ -317,9 +317,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>XYView</class>
-   <extends>QGraphicsView</extends>
-   <header>xygraph/xyview.hh</header>
+   <class>XY::Graph</class>
+   <extends>QOpenGLWidget</extends>
+   <header>xygraph/xygraph.hh</header>
   </customwidget>
  </customwidgets>
  <tabstops>
@@ -328,7 +328,6 @@
   <tabstop>integrationTime</tabstop>
   <tabstop>buttonStartStop</tabstop>
   <tabstop>tabWidget</tabstop>
-  <tabstop>output</tabstop>
  </tabstops>
  <resources/>
  <connections/>
