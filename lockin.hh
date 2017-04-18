@@ -39,7 +39,7 @@ public:
     bool isFormatSupported(const QAudioFormat &format);
 
     // Cannot be called when running
-    bool start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &format);
+    bool start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &format, int output_period = 500);
     void setOutputPeriod(qreal outputPeriod);
     qreal outputPeriod() const;
     void setIntegrationTime(qreal integrationTime);
@@ -69,7 +69,6 @@ private:
     QAudioFormat _format; // don't change it during running
 
     bool _invertLR;
-    qreal _outputPeriod; // don't change it during running
     qreal _integrationTime; // don't change it during running
     int _sampleIntegration; // don't change it during running
 

@@ -42,7 +42,7 @@ LockinGui::LockinGui(QWidget *parent) :
     }
 
     QSettings set;
-    ui->outputPeriod->setValue(set.value("output period", _lockin->outputPeriod()).toDouble());
+    ui->outputPeriod->setValue(set.value("output period", ui->outputPeriod->value()).toDouble());
     ui->integrationTime->setValue(set.value("integration time", _lockin->integrationTime()).toDouble());
 
     connect(_lockin, SIGNAL(newRawData()), this, SLOT(updateGraphs()));
@@ -202,10 +202,9 @@ void LockinGui::startLockin()
 //    qDebug() << "========== format infos ========== ";
     qDebug() << format;
 
-    _lockin->setOutputPeriod(ui->outputPeriod->value());
     _lockin->setIntegrationTime(ui->integrationTime->value());
 
-    if (_lockin->start(selected_device, format)) {
+    if (_lockin->start(selected_device, format, ui->outputPeriod->value() * 1000)) {
         _run_time.start();
         _start_time = QTime::currentTime();
 

@@ -35,7 +35,6 @@ Lockin::Lockin(QObject *parent) :
     _audioInput = nullptr;
 
     _invertLR = false;
-    setOutputPeriod(0.5);
     setIntegrationTime(3.0);
 }
 
@@ -63,7 +62,7 @@ bool Lockin::isFormatSupported(const QAudioFormat &format)
     return true;
 }
 
-bool Lockin::start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &format)
+bool Lockin::start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &format, int output_period)
 {
     if (_audioInput != 0) {
         qDebug() << __FUNCTION__ << ": lockin is already running, please stop is before start";
@@ -81,12 +80,12 @@ bool Lockin::start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &form
     }
 
     _audioInput = new QAudioInput(audioDevice, format, this);
-    _audioInput->setNotifyInterval(_outputPeriod * 1000.0);
+    _audioInput->setNotifyInterval(output_period);
 
     connect(_audioInput, SIGNAL(notify()), this, SLOT(interpretInput()));
 
     // pour être au millieu avec le temps
-    _timeValue = -(_integrationTime / 2.0);
+    _timeValue = 0;
 
     // nombre d'échantillons pour le temps d'integration
     _sampleIntegration = format.sampleRate() * _integrationTime;
@@ -100,17 +99,6 @@ bool Lockin::start(const QAudioDeviceInfo &audioDevice, const QAudioFormat &form
     _audioInput->start(_fifo);
 
     return true;
-}
-
-void Lockin::setOutputPeriod(qreal outputPeriod)
-{
-    Q_ASSERT(_audioInput == 0);
-    _outputPeriod = outputPeriod;
-}
-
-qreal Lockin::outputPeriod() const
-{
-    return _outputPeriod;
 }
 
 void Lockin::setIntegrationTime(qreal integrationTime)
@@ -157,8 +145,6 @@ void Lockin::stop()
 
 void Lockin::interpretInput()
 {
-    _timeValue += _outputPeriod;
-
     // récupère les nouvelles valeurs
     /*
      * le nombre de nouvelle valeurs = outputPeriod * sampleRate / 1000
@@ -181,6 +167,9 @@ void Lockin::interpretInput()
         qDebug() << __FUNCTION__ << ": empty channels";
         return;
     }
+
+    qreal delta_t = qreal(_left_right.size()) / qreal(_format.sampleRate());
+    _timeValue += delta_t;
 
 	parseChopperSignal();
     emit newRawData();
@@ -235,8 +224,6 @@ void Lockin::readSoudCard()
     QDataStream in(_fifo);
     in.setByteOrder(QDataStream::ByteOrder(_format.byteOrder()));
 
-    int count = 0;
-
     float _float;
     qint8 _int8;
     qint16 _int16;
@@ -257,7 +244,6 @@ void Lockin::readSoudCard()
                 std::swap(pair.first, pair.second);
             }
             _left_right.append(pair);
-            count++;
         }
         break;
     case QAudioFormat::SignedInt:
@@ -272,7 +258,6 @@ void Lockin::readSoudCard()
                     std::swap(pair.first, pair.second);
                 }
                 _left_right.append(pair);
-                count++;
             }
             break;
         case 16:
@@ -285,7 +270,6 @@ void Lockin::readSoudCard()
                     std::swap(pair.first, pair.second);
                 }
                 _left_right.append(pair);
-                count++;
             }
             break;
         case 32:
@@ -298,7 +282,6 @@ void Lockin::readSoudCard()
                     std::swap(pair.first, pair.second);
                 }
                 _left_right.append(pair);
-                count++;
             }
             break;
         }
@@ -315,7 +298,6 @@ void Lockin::readSoudCard()
                     std::swap(pair.first, pair.second);
                 }
                 _left_right.append(pair);
-                count++;
             }
             break;
         case 16:
@@ -328,7 +310,6 @@ void Lockin::readSoudCard()
                     std::swap(pair.first, pair.second);
                 }
                 _left_right.append(pair);
-                count++;
             }
             break;
         case 32:
@@ -341,17 +322,12 @@ void Lockin::readSoudCard()
                     std::swap(pair.first, pair.second);
                 }
                 _left_right.append(pair);
-                count++;
             }
             break;
         }
         break;
     case QAudioFormat::Unknown:
         break;
-    }
-
-    if (count == 0) {
-        qDebug() << __FUNCTION__ << ": cannot read data (in.atEnd = " << in.atEnd() << ")";
     }
 }
 
