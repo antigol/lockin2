@@ -24,12 +24,6 @@
 #define LOCKIN_HPP
 
 #include <QAudioInput>
-#include <QAudioFormat>
-#include <QObject>
-#include <QBuffer>
-#include <QDataStream>
-#include <QPair>
-#include <QMutex>
 #include <QVector>
 #include <complex>
 

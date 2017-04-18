@@ -23,7 +23,6 @@
 #ifndef LOCKINGUI_HPP
 #define LOCKINGUI_HPP
 
-#include <QAudioDeviceInfo>
 #include <QWidget>
 #include <QTime>
 #include <QTimer>

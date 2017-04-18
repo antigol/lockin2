@@ -22,10 +22,9 @@
 
 #include "lockin.hh"
 #include "fifo.hh"
-#include <cstdio>
 #include <cmath>
 #include <QDebug>
-#include <QTime>
+#include <QDataStream>
 
 Lockin::Lockin(QObject *parent) :
     QObject(parent)
@@ -158,9 +157,6 @@ void Lockin::stop()
 
 void Lockin::interpretInput()
 {
-    QTime time;
-    time.start();
-
     _timeValue += _outputPeriod;
 
     // récupère les nouvelles valeurs
@@ -215,12 +211,6 @@ void Lockin::interpretInput()
     x /= qreal(_sampleIntegration);
 
     emit newValue(_timeValue, std::abs(x));
-
-	static qreal total_time = 0.0;
-    static int total_calls = 0;
-    total_time += time.elapsed();
-    total_calls += 1;
-//    qDebug() << __FUNCTION__ << ": execution time " << (total_time / total_calls) << "ms";
 }
 
 void Lockin::readSoudCard()

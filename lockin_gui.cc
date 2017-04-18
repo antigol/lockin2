@@ -23,12 +23,9 @@
 
 #include "lockin_gui.hh"
 #include "ui_lockin_gui.h"
-#include "xygraph/xyscene.hh"
-#include <QDebug>
-#include <QTime>
 #include <QSettings>
+#include <QDebug>
 #include <QMessageBox>
-#include <iostream>
 
 LockinGui::LockinGui(QWidget *parent) :
     QWidget(parent),
