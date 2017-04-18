@@ -175,13 +175,11 @@ void LockinGui::getValue(qreal time, qreal measure)
     ui->label_current_time->setText(QTime(0, 0).addMSecs(1000 * time).toString());
     ui->label_real_time->setText(QTime(0, 0).addMSecs(_run_time.elapsed()).toString());
 
-    // output graph
-    _measures_plot.append(QPointF(time, measure));
-
-    if (ui->output->xmin() < time && ui->output->xmax() < time && ui->output->xmax() > time * 0.9)
-        ui->output->setZoom(ui->output->xmin(), time + 0.20 * (ui->output->xmax() - ui->output->xmin()), ui->output->ymin(), ui->output->ymax());
-
+    _measures_plot << QPointF(time, measure);
     emit newValue();
+
+    if (ui->output->xmax() < time && ui->output->xmax() > time * 0.9)
+        ui->output->setxmax(time + 0.20 * ui->output->xwidth());
 }
 
 void LockinGui::regraph()
