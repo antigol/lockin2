@@ -1,3 +1,5 @@
+include($$PWD/xygraph/xygraph.pri)
+
 SOURCES += $$PWD/fifo.cc \
     $$PWD/lockin_gui.cc \
     $$PWD/lockin.cc
