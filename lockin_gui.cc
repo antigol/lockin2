@@ -23,7 +23,6 @@
 
 #include "lockin_gui.hh"
 #include "ui_lockin_gui.h"
-#include "audioutils.hh"
 #include "xygraph/xyscene.hh"
 #include <QDebug>
 #include <QTime>
@@ -60,7 +59,7 @@ LockinGui::LockinGui(QWidget *parent) :
 
     _vumeter_left_plot.linePen = QPen(QBrush(Qt::white), 1.5);
     _vumeter_left_plot.dotRadius = 0.0;
-    ui->left->addPointList(&_vumeter_left_plot);
+    ui->left->pointLists << &_vumeter_left_plot;
 
 
     ui->right->backgroundBrush = QBrush(Qt::black);
@@ -73,8 +72,8 @@ LockinGui::LockinGui(QWidget *parent) :
     _vumeter_right_plot.dotRadius = 0.0;
     _vumeter_sin_plot.linePen = QPen(QBrush(Qt::gray), 1., Qt::DashLine);
     _vumeter_sin_plot.dotRadius = 0.0;
-    ui->right->addPointList(&_vumeter_right_plot);
-    ui->right->addPointList(&_vumeter_sin_plot);
+    ui->right->pointLists << &_vumeter_right_plot;
+    ui->right->pointLists << &_vumeter_sin_plot;
 
     ui->output->backgroundBrush = QBrush(Qt::black);
     ui->output->axesPen = QPen(Qt::lightGray);
@@ -84,7 +83,7 @@ LockinGui::LockinGui(QWidget *parent) :
 
     _measures_plot.linePen = QPen(QBrush(Qt::white), 1.5);
     _measures_plot.dotRadius = 0.0;
-    ui->output->addPointList(&_measures_plot);
+    ui->output->pointLists << &_measures_plot;
 
     _regraph_timer.setSingleShot(true);
     connect(&_regraph_timer, SIGNAL(timeout()), this, SLOT(regraph()));
